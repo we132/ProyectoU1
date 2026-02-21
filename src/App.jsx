@@ -2,33 +2,8 @@ import { Routes, Route, Navigate } from 'react-router-dom'
 import { Terminal, LogOut } from 'lucide-react'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { AuthUI } from './components/AuthUI'
-
-// Placeholder components
-const Dashboard = () => {
-  const { user, signOut } = useAuth()
-
-  return (
-    <div className="flex flex-col items-center justify-center h-full space-y-6 mt-20">
-      <Terminal className="w-16 h-16 text-forge-accent drop-shadow-neon" />
-      <h1 className="text-4xl font-mono text-forge-accent drop-shadow-neon text-center">
-        WELCOME BACK, <br />
-        <span className="text-white">{user?.user_metadata?.username || user?.email}</span>
-      </h1>
-      <p className="text-gray-400 max-w-md text-center leading-relaxed">
-        Synchronization complete. The Forge is ready for your commands.
-      </p>
-
-      {/* Sign Out Button */}
-      <button
-        onClick={() => signOut()}
-        className="px-6 py-3 mt-8 font-mono font-bold text-forge-danger border border-forge-danger/30 rounded hover:bg-forge-danger/10 transition-all duration-300 shadow-[0_0_10px_rgba(255,0,60,0.1)] flex items-center gap-2"
-      >
-        <LogOut size={18} />
-        TERMINATE_SESSION
-      </button>
-    </div>
-  )
-};
+import { KanbanBoard } from './components/KanbanBoard'
+import { useProfile } from './hooks/useProfile'
 
 // Protected Route Wrapper Component
 const ProtectedRoute = ({ children }) => {
@@ -49,7 +24,18 @@ const PublicRoute = ({ children }) => {
 
 
 function AppContent() {
-  const { session } = useAuth()
+  const { session, signOut, user } = useAuth()
+  const { profile } = useProfile()
+
+  // Calculate generic base XP logic based on mathematical levels
+  const currentXP = profile?.xp || 0
+  const currentLevel = profile?.level || 1
+
+  // Base XP formula we implemented (level is floor(TotalXP / 1000) + 1)
+  const baseXPForLevel = (currentLevel - 1) * 1000
+  const nextLevelXP = currentLevel * 1000
+  // Relative XP to show on progress UI 
+  const relativeXpInLevel = currentXP - baseXPForLevel
 
   return (
     <div className="min-h-screen bg-forge-900 text-white font-sans selection:bg-forge-accent selection:text-forge-900 flex flex-col">
@@ -75,17 +61,39 @@ function AppContent() {
           {session && (
             <>
               <div className="w-px h-4 bg-gray-700"></div>
-              <div className="flex items-center gap-2">
-                <span className="text-forge-xp font-bold drop-shadow-neon-xp">LVL 1</span>
-                <span className="text-gray-400 hidden sm:inline-block">0 / 1000 XP</span>
+              {/* Dynamic XP Info from Profile hook */}
+              <div className="flex flex-col sm:flex-row items-center gap-2">
+                <span className="text-forge-xp font-bold drop-shadow-neon-xp">LVL {currentLevel}</span>
+                <div className="hidden sm:flex flex-col gap-1 w-32">
+                  <div className="flex justify-between text-[10px] text-gray-400">
+                    <span>{relativeXpInLevel}</span>
+                    <span>1000</span>
+                  </div>
+                  {/* Mini XP progress bar */}
+                  <div className="w-full h-1 bg-forge-900 rounded overflow-hidden">
+                    <div
+                      className="h-full bg-forge-xp shadow-neon-xp transition-all duration-1000"
+                      style={{ width: `${(relativeXpInLevel / 1000) * 100}%` }}
+                    ></div>
+                  </div>
+                </div>
               </div>
+
+              <div className="w-px h-4 bg-gray-700"></div>
+              <button
+                onClick={signOut}
+                title="Terminate Session"
+                className="text-gray-500 hover:text-forge-danger transition-colors flex items-center gap-1 group"
+              >
+                <LogOut size={16} className="group-hover:-translate-x-1 transition-transform" />
+              </button>
             </>
           )}
         </div>
       </nav>
 
       {/* Main Routing Area */}
-      <main className="container mx-auto p-4 flex-grow">
+      <main className="container mx-auto p-4 flex-grow flex flex-col">
         <Routes>
           <Route
             path="/auth"
@@ -99,7 +107,8 @@ function AppContent() {
             path="/"
             element={
               <ProtectedRoute>
-                <Dashboard />
+                {/* Replaced old dashboard mockup with Real Kanban */}
+                <KanbanBoard />
               </ProtectedRoute>
             }
           />
