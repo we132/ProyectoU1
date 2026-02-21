@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
-import { Terminal, LogOut } from 'lucide-react'
+import { MonitorPlay, LogOut, Globe } from 'lucide-react'
 import { AuthProvider, useAuth } from './context/AuthContext'
+import { LanguageProvider, useLanguage } from './context/LanguageContext'
 import { AuthUI } from './components/AuthUI'
 import { KanbanBoard } from './components/KanbanBoard'
 import { useProfile } from './hooks/useProfile'
@@ -22,78 +23,63 @@ const PublicRoute = ({ children }) => {
   return children
 }
 
-
-function AppContent() {
-  const { session, signOut, user } = useAuth()
+function GlobalNav() {
+  const { session, signOut } = useAuth()
   const { profile } = useProfile()
+  const { t, lang, toggleLanguage } = useLanguage()
 
-  // Calculate generic base XP logic based on mathematical levels
-  const currentXP = profile?.xp || 0
   const currentLevel = profile?.level || 1
 
-  // Base XP formula we implemented (level is floor(TotalXP / 1000) + 1)
-  const baseXPForLevel = (currentLevel - 1) * 1000
-  const nextLevelXP = currentLevel * 1000
-  // Relative XP to show on progress UI 
-  const relativeXpInLevel = currentXP - baseXPForLevel
-
   return (
-    <div className="min-h-screen bg-forge-900 text-white font-sans selection:bg-forge-accent selection:text-forge-900 flex flex-col">
-      {/* Global Navigation Shell */}
-      <nav className="p-4 border-b border-forge-800 flex justify-between items-center bg-forge-900/80 backdrop-blur-md sticky top-0 z-50">
-        <div className="flex items-center gap-3 text-forge-accent transition-transform hover:scale-105 duration-300 cursor-pointer">
-          <Terminal size={28} className="drop-shadow-neon" />
-          <span className="font-mono font-bold tracking-widest text-lg drop-shadow-neon hidden sm:inline-block">
-            THE FORGE
-          </span>
-        </div>
+    <nav className="px-6 py-4 flex justify-between items-center bg-forge-900 sticky top-0 z-50 border-b border-forge-800">
+      {/* Brand Logo - YouTube/Netflix style */}
+      <div className="flex items-center gap-2 text-white font-bold tracking-tight text-xl">
+        <MonitorPlay className="text-forge-accent" fill="currentColor" size={28} />
+        <span>{t('appTitle')}</span>
+      </div>
 
-        <div className="flex gap-4 sm:gap-6 items-center font-mono text-xs sm:text-sm bg-forge-800 px-3 sm:px-4 py-2 rounded-full border border-forge-800 shadow-[inset_0_0_10px_rgba(0,0,0,0.5)]">
-          <div className="flex items-center gap-2">
-            <span className="text-gray-500 hidden sm:inline-block">STATUS:</span>
-            {session ? (
-              <span className="text-forge-accent drop-shadow-neon animate-pulse">ONLINE</span>
-            ) : (
-              <span className="text-forge-danger">OFFLINE</span>
-            )}
+      {/* Right Controls */}
+      <div className="flex items-center gap-4 sm:gap-6">
+
+        {/* Language Switcher */}
+        <button
+          onClick={toggleLanguage}
+          className="flex items-center gap-1 text-sm font-medium text-gray-400 hover:text-white transition-colors"
+          title="Switch Language"
+        >
+          <Globe size={18} />
+          <span className="uppercase">{lang}</span>
+        </button>
+
+        {session && (
+          <div className="flex items-center gap-4">
+            {/* Simple Level Badge */}
+            <div className="bg-forge-800 border border-forge-700 px-3 py-1 rounded-full flex items-center gap-2 shadow-sm">
+              <span className="text-xs text-gray-400 font-medium">{t('lvl')}</span>
+              <span className="text-sm text-forge-xp font-bold">{currentLevel}</span>
+            </div>
+
+            {/* Avatar / Logout */}
+            <button
+              onClick={signOut}
+              title={t('logout')}
+              className="w-9 h-9 rounded-full bg-forge-800 border border-forge-700 flex items-center justify-center text-gray-400 hover:text-white hover:border-forge-accent transition-all"
+            >
+              <LogOut size={16} />
+            </button>
           </div>
+        )}
+      </div>
+    </nav>
+  )
+}
 
-          {session && (
-            <>
-              <div className="w-px h-4 bg-gray-700"></div>
-              {/* Dynamic XP Info from Profile hook */}
-              <div className="flex flex-col sm:flex-row items-center gap-2">
-                <span className="text-forge-xp font-bold drop-shadow-neon-xp">LVL {currentLevel}</span>
-                <div className="hidden sm:flex flex-col gap-1 w-32">
-                  <div className="flex justify-between text-[10px] text-gray-400">
-                    <span>{relativeXpInLevel}</span>
-                    <span>1000</span>
-                  </div>
-                  {/* Mini XP progress bar */}
-                  <div className="w-full h-1 bg-forge-900 rounded overflow-hidden">
-                    <div
-                      className="h-full bg-forge-xp shadow-neon-xp transition-all duration-1000"
-                      style={{ width: `${(relativeXpInLevel / 1000) * 100}%` }}
-                    ></div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="w-px h-4 bg-gray-700"></div>
-              <button
-                onClick={signOut}
-                title="Terminate Session"
-                className="text-gray-500 hover:text-forge-danger transition-colors flex items-center gap-1 group"
-              >
-                <LogOut size={16} className="group-hover:-translate-x-1 transition-transform" />
-              </button>
-            </>
-          )}
-        </div>
-      </nav>
-
+function AppContent() {
+  return (
+    <div className="min-h-screen bg-forge-900 text-white font-sans flex flex-col">
+      <GlobalNav />
       {/* Main Routing Area */}
-      <main className="container mx-auto p-4 flex-grow flex flex-col">
+      <main className="container mx-auto px-4 py-8 flex-grow flex flex-col">
         <Routes>
           <Route
             path="/auth"
@@ -107,7 +93,6 @@ function AppContent() {
             path="/"
             element={
               <ProtectedRoute>
-                {/* Replaced old dashboard mockup with Real Kanban */}
                 <KanbanBoard />
               </ProtectedRoute>
             }
@@ -121,9 +106,11 @@ function AppContent() {
 
 function App() {
   return (
-    <AuthProvider>
-      <AppContent />
-    </AuthProvider>
+    <LanguageProvider>
+      <AuthProvider>
+        <AppContent />
+      </AuthProvider>
+    </LanguageProvider>
   )
 }
 

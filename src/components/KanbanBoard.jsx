@@ -10,35 +10,68 @@ import {
 } from '@dnd-kit/core'
 import { sortableKeyboardCoordinates, SortableContext, rectSortingStrategy, useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { DatabaseZap, FileText, Loader2, PlayCircle } from 'lucide-react'
+import { CheckCircle2, Clock, ListTodo, Loader2 } from 'lucide-react'
 
 import { useTasks } from '../hooks/useTasks'
 import { useProfile } from '../hooks/useProfile'
-import { TaskTerminal } from './TaskTerminal'
+import { useLanguage } from '../context/LanguageContext'
+import { TaskModal } from './TaskModal'
 import { TaskCard } from './TaskCard'
+
+// Simple helper to play a satisfying sound
+const playSuccessSound = () => {
+    try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+
+        oscillator.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+
+        // Nice double chime
+        oscillator.type = 'sine';
+        oscillator.frequency.setValueAtTime(523.25, audioCtx.currentTime); // C5
+        oscillator.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.1); // E5
+
+        gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.5);
+
+        oscillator.start(audioCtx.currentTime);
+        oscillator.stop(audioCtx.currentTime + 0.5);
+    } catch (e) {
+        console.log("Audio not supported or blocked");
+    }
+}
 
 // Column Component
 const Column = ({ id, title, tasks, icon: Icon, onDeleteTask }) => {
+    const { t } = useLanguage()
     const { setNodeRef } = useSortable({ id })
 
     return (
-        <div className="flex flex-col bg-forge-800/40 border border-forge-800 rounded-lg p-4 h-full min-h-[500px]">
-            <div className="flex items-center gap-2 mb-4 border-b border-forge-800 pb-3">
-                <Icon size={18} className="text-forge-accent opacity-80" />
-                <h3 className="font-mono font-bold tracking-widest text-sm text-gray-300 uppercase">
-                    {title} <span className="text-gray-600 ml-1">[{tasks.length}]</span>
+        <div className="flex flex-col bg-forge-900 border border-forge-700/50 rounded-2xl p-4 h-full min-h-[500px] shadow-sm">
+            <div className="flex items-center gap-3 mb-5 pb-3">
+                <div className="p-2 bg-forge-800 rounded-lg text-white">
+                    <Icon size={18} />
+                </div>
+                <h3 className="font-bold text-base tracking-wide text-gray-100 flex-grow">
+                    {title}
                 </h3>
+                <span className="bg-forge-800 text-gray-400 text-xs font-bold px-2.5 py-1 rounded-full">
+                    {tasks.length}
+                </span>
             </div>
 
-            <div ref={setNodeRef} className="flex-grow flex flex-col gap-2 relative">
+            <div ref={setNodeRef} className="flex-grow flex flex-col gap-0 relative">
                 <SortableContext items={tasks.map(t => t.id)} strategy={rectSortingStrategy}>
                     {tasks.map((task) => (
                         <TaskCard key={task.id} task={task} onDelete={onDeleteTask} />
                     ))}
                 </SortableContext>
                 {tasks.length === 0 && (
-                    <div className="absolute inset-0 flex items-center justify-center text-gray-600 font-mono text-xs border border-dashed border-forge-800 rounded">
-                        NO OBJECTIVES
+                    <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-500 gap-3 bg-forge-800/20 rounded-xl border border-dashed border-forge-700/50">
+                        <Icon size={32} className="opacity-20" />
+                        <span className="font-medium text-sm">{t('noObjectives')}</span>
                     </div>
                 )}
             </div>
@@ -47,14 +80,13 @@ const Column = ({ id, title, tasks, icon: Icon, onDeleteTask }) => {
 }
 
 export const KanbanBoard = () => {
+    const { t } = useLanguage()
     const { tasks, loading, addTask, updateTaskStatus, deleteTask } = useTasks()
     const { addXP } = useProfile()
 
-    // Local state for optimistic UI updates during drag
     const [activeTask, setActiveTask] = useState(null)
     const [localTasks, setLocalTasks] = useState(tasks)
 
-    // Sync local tasks when DB tasks change (except during drag)
     useEffect(() => {
         setLocalTasks(tasks)
     }, [tasks])
@@ -65,20 +97,18 @@ export const KanbanBoard = () => {
     )
 
     const columns = [
-        { id: 'todo', title: 'BACKLOG', icon: FileText },
-        { id: 'in_progress', title: 'IN PROGRESS', icon: PlayCircle },
-        { id: 'done', title: 'TERMINATED', icon: DatabaseZap }
+        { id: 'todo', title: t('backlog'), icon: ListTodo },
+        { id: 'in_progress', title: t('inProgress'), icon: Clock },
+        { id: 'done', title: t('done'), icon: CheckCircle2 }
     ]
 
-    // Filter tasks per column
     const tasksByCol = useMemo(() => {
         return columns.reduce((acc, col) => {
             acc[col.id] = localTasks.filter(t => t.status === col.id)
             return acc
         }, {})
-    }, [localTasks])
+    }, [localTasks, columns])
 
-    // DND Handlers
     const handleDragStart = (event) => {
         const { active } = event
         const task = localTasks.find(t => t.id === active.id)
@@ -93,13 +123,11 @@ export const KanbanBoard = () => {
         }
 
         const taskId = active.id
-        const targetStatus = over.id // This handles dropping on the column container
+        const targetStatus = over.id
 
-        // If dropped on another task, get that task's status
         const overTask = localTasks.find(t => t.id === over.id)
         const finalTargetStatus = overTask ? overTask.status : (columns.find(c => c.id === targetStatus) ? targetStatus : null)
 
-        // Find original task
         const originalTask = localTasks.find(t => t.id === taskId)
 
         if (finalTargetStatus && originalTask.status !== finalTargetStatus) {
@@ -108,32 +136,32 @@ export const KanbanBoard = () => {
                 prev.map(t => t.id === taskId ? { ...t, status: finalTargetStatus } : t)
             )
 
-            // Actual DB Sync
+            // DB Sync
             await updateTaskStatus(taskId, finalTargetStatus)
 
-            // XP Rewards logic strictly ON COMPLETION (moved to 'done')
+            // XP & Sound Logic
             if (finalTargetStatus === 'done' && originalTask.status !== 'done') {
                 const reward = originalTask.xp_reward || 10
                 await addXP(reward)
+                playSuccessSound() // Ding!
             }
         }
 
         setActiveTask(null)
     }
 
-    if (loading) {
+    if (loading && tasks.length === 0) {
         return (
-            <div className="h-full flex flex-col items-center justify-center text-forge-accent font-mono animate-pulse gap-3">
-                <Loader2 className="animate-spin w-8 h-8" />
-                <span>QUERYING_DATABASE...</span>
+            <div className="h-full flex flex-col items-center justify-center text-forge-accent gap-4">
+                <Loader2 className="animate-spin w-10 h-10" />
             </div>
         )
     }
 
     return (
-        <div className="flex flex-col h-full max-w-6xl mx-auto w-full">
-            {/* 1. Terminal Input Area */}
-            <TaskTerminal onAddTask={addTask} />
+        <div className="flex flex-col h-full max-w-7xl mx-auto w-full">
+            {/* 1. Rich Task Creation Modal Launcher */}
+            <TaskModal onAddTask={addTask} />
 
             {/* 2. Drag and Drop Layout */}
             <div className="flex-grow min-h-0">
@@ -158,7 +186,7 @@ export const KanbanBoard = () => {
 
                     <DragOverlay>
                         {activeTask ? (
-                            <div className="opacity-90 transform rotate-2">
+                            <div className="opacity-95 transform rotate-3 scale-105">
                                 <TaskCard task={activeTask} onDelete={() => { }} />
                             </div>
                         ) : null}

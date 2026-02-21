@@ -27,10 +27,49 @@ export const useTasks = () => {
         fetchTasks()
     }, [fetchTasks])
 
-    const addTask = async (title, difficulty) => {
+    // Real-time listener for multi-device sync
+    useEffect(() => {
         if (!user) return
 
-        // XP rewards mapping depending on difficulty
+        const channel = supabase.channel('public:tasks')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'tasks' }, payload => {
+                // Trigger a complete re-fetch to simplify logic and ensure data consistency across devices
+                console.log('Realtime sync triggered:', payload)
+                fetchTasks()
+            })
+            .subscribe()
+
+        return () => {
+            supabase.removeChannel(channel)
+        }
+    }, [user, fetchTasks])
+
+    // New Add Task with Image Upload and Description
+    const addTask = async (title, description, difficulty, imageFile) => {
+        if (!user) return
+
+        let uploadedImageUrl = null
+
+        // Attempt to upload image if provided
+        if (imageFile) {
+            const fileExt = imageFile.name.split('.').pop()
+            const fileName = `${user.id}-${Math.random()}.${fileExt}`
+
+            const { data: uploadData, error: uploadError } = await supabase.storage
+                .from('task_images')
+                .upload(fileName, imageFile)
+
+            if (uploadError) {
+                console.error('Image upload failed:', uploadError)
+                // We will continue without the image if upload fails but log it.
+            } else {
+                const { data: { publicUrl } } = supabase.storage
+                    .from('task_images')
+                    .getPublicUrl(fileName)
+                uploadedImageUrl = publicUrl
+            }
+        }
+
         const xpMap = {
             'easy': 10,
             'medium': 50,
@@ -40,9 +79,11 @@ export const useTasks = () => {
         const newTask = {
             user_id: user.id,
             title,
+            description: description || null,
             difficulty,
             xp_reward: xpMap[difficulty] || 10,
-            status: 'todo' // Default status
+            status: 'todo',
+            image_url: uploadedImageUrl
         }
 
         const { data, error } = await supabase
@@ -54,6 +95,7 @@ export const useTasks = () => {
             console.error('Error adding task:', error)
             return { error }
         } else {
+            // Local addition for instant feedback
             setTasks(prev => [data[0], ...prev])
             return { data: data[0] }
         }
@@ -76,6 +118,7 @@ export const useTasks = () => {
     }
 
     const deleteTask = async (taskId) => {
+        // Also try to delete image from bucket if we want to be clean, but not strictly required for this demo
         const { error } = await supabase
             .from('tasks')
             .delete()

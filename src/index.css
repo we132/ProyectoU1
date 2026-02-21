@@ -1,22 +1,54 @@
 @import "tailwindcss";
 
 @theme {
-  --color-forge-900: #0a0a0f;
-  --color-forge-800: #13141c;
-  --color-forge-accent: #00ffcc;
-  --color-forge-danger: #ff003c;
-  --color-forge-xp: #bf00ff;
+  /* Streaming Platform Theme Tokens (YouTube/Netflix Dark Mode aesthetic) */
+  --color-forge-900: #0f0f0f;
+  /* Deep YouTube-like background */
+  --color-forge-800: #1a1a1a;
+  /* Elevated surfaces, cards */
+  --color-forge-700: #272727;
+  /* Borders and subtle hovers */
 
-  --font-sans: "Inter", sans-serif;
-  --font-mono: "JetBrains Mono", monospace;
+  /* Modern clean accents */
+  --color-forge-accent: #ff0000;
+  /* Signature Streaming Red */
+  --color-forge-accent-hover: #cc0000;
+  --color-forge-danger: #ea3323;
 
-  --shadow-neon: 0 0 10px rgba(0, 255, 204, 0.5), 0 0 20px rgba(0, 255, 204, 0.3);
-  --shadow-neon-xp: 0 0 10px rgba(191, 0, 255, 0.5), 0 0 20px rgba(191, 0, 255, 0.3);
+  /* Gamification Colors (Refined) */
+  --color-forge-xp: #3ea6ff;
+  /* A clean blue for XP to contrast with red */
+
+  --font-sans: "Roboto", "Inter", sans-serif;
+  --font-mono: "Roboto Mono", monospace;
+
+  /* Clean subtle shadows instead of loud neons */
+  --shadow-neon: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -1px rgba(0, 0, 0, 0.4);
+  --shadow-neon-xp: 0 0 10px rgba(62, 166, 255, 0.2);
 }
 
 body {
   background-color: var(--color-forge-900);
-  color: #ffffff;
+  color: #f1f1f1;
+  /* Soft off-white for better readability */
   margin: 0;
   font-family: var(--font-sans);
+}
+
+/* Custom Scrollbar for a premium feel */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-forge-900);
+}
+
+::-webkit-scrollbar-thumb {
+  background: #3f3f3f;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #717171;
 }
