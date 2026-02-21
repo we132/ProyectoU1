@@ -17,6 +17,7 @@ import { useProfile } from '../hooks/useProfile'
 import { useLanguage } from '../context/LanguageContext'
 import { TaskModal } from './TaskModal'
 import { TaskCard } from './TaskCard'
+import { LootboxModal } from './LootboxModal'
 
 // Simple helper to play a satisfying sound
 const playSuccessSound = () => {
@@ -44,7 +45,7 @@ const playSuccessSound = () => {
 }
 
 // Column Component
-const Column = ({ id, title, tasks, icon: Icon, onDeleteTask }) => {
+const Column = ({ id, title, tasks, icon: Icon, onDeleteTask, onEditTask }) => {
     const { t } = useLanguage()
     const { setNodeRef } = useSortable({ id })
 
@@ -65,7 +66,7 @@ const Column = ({ id, title, tasks, icon: Icon, onDeleteTask }) => {
             <div ref={setNodeRef} className="flex-grow flex flex-col gap-0 relative">
                 <SortableContext items={tasks.map(t => t.id)} strategy={rectSortingStrategy}>
                     {tasks.map((task) => (
-                        <TaskCard key={task.id} task={task} onDelete={onDeleteTask} />
+                        <TaskCard key={task.id} task={task} onDelete={onDeleteTask} onEdit={onEditTask} />
                     ))}
                 </SortableContext>
                 {tasks.length === 0 && (
@@ -81,11 +82,19 @@ const Column = ({ id, title, tasks, icon: Icon, onDeleteTask }) => {
 
 export const KanbanBoard = () => {
     const { t } = useLanguage()
-    const { tasks, loading, addTask, updateTaskStatus, deleteTask } = useTasks()
-    const { addXP } = useProfile()
+    const { tasks, loading, addTask, editTask, updateTaskStatus, deleteTask } = useTasks()
+    const { addXP, updateAvatar } = useProfile()
 
     const [activeTask, setActiveTask] = useState(null)
     const [localTasks, setLocalTasks] = useState(tasks)
+
+    // Lootbox States
+    const [showLootbox, setShowLootbox] = useState(false)
+    const [achievedLevel, setAchievedLevel] = useState(1)
+
+    // Modal states
+    const [isModalOpen, setIsModalOpen] = useState(false)
+    const [editingTask, setEditingTask] = useState(null)
 
     useEffect(() => {
         setLocalTasks(tasks)
@@ -142,8 +151,14 @@ export const KanbanBoard = () => {
             // XP & Sound Logic
             if (finalTargetStatus === 'done' && originalTask.status !== 'done') {
                 const reward = originalTask.xp_reward || 10
-                await addXP(reward)
+                const result = await addXP(reward)
                 playSuccessSound() // Ding!
+
+                // Trigger Lootbox Drop
+                if (result && result.levelledUp) {
+                    setAchievedLevel(result.newLevel)
+                    setShowLootbox(true)
+                }
             }
         }
 
@@ -159,9 +174,21 @@ export const KanbanBoard = () => {
     }
 
     return (
-        <div className="flex flex-col h-full max-w-7xl mx-auto w-full">
+        <div className="flex flex-col h-full max-w-7xl mx-auto w-full relative">
             {/* 1. Rich Task Creation Modal Launcher */}
-            <TaskModal onAddTask={addTask} />
+            <TaskModal
+                isOpen={isModalOpen}
+                onClose={() => {
+                    setIsModalOpen(false)
+                    setEditingTask(null)
+                }}
+                onOpenNew={() => {
+                    setEditingTask(null)
+                    setIsModalOpen(true)
+                }}
+                initialData={editingTask}
+                onSaveTask={editingTask ? editTask : addTask}
+            />
 
             {/* 2. Drag and Drop Layout */}
             <div className="flex-grow min-h-0">
@@ -180,6 +207,10 @@ export const KanbanBoard = () => {
                                 tasks={tasksByCol[col.id]}
                                 icon={col.icon}
                                 onDeleteTask={deleteTask}
+                                onEditTask={(task) => {
+                                    setEditingTask(task)
+                                    setIsModalOpen(true)
+                                }}
                             />
                         ))}
                     </div>
@@ -187,12 +218,22 @@ export const KanbanBoard = () => {
                     <DragOverlay>
                         {activeTask ? (
                             <div className="opacity-95 transform rotate-3 scale-105">
-                                <TaskCard task={activeTask} onDelete={() => { }} />
+                                <TaskCard task={activeTask} onDelete={() => { }} onEdit={() => { }} />
                             </div>
                         ) : null}
                     </DragOverlay>
                 </DndContext>
             </div>
+
+            <LootboxModal
+                isOpen={showLootbox}
+                newLevel={achievedLevel}
+                onClose={() => setShowLootbox(false)}
+                onEquip={async (url) => {
+                    await updateAvatar(url)
+                    setShowLootbox(false)
+                }}
+            />
         </div>
     )
 }

@@ -34,6 +34,7 @@ export const useProfile = () => {
         const newXpTotal = profile.xp + amount
         // Logic: 1000 XP per level. Formula: Base level 1 + floor(XP / 1000)
         const newLevel = Math.floor(newXpTotal / 1000) + 1
+        const hasLevelledUp = newLevel > profile.level
 
         // Update local optimistic state first for fast UI feedback
         const updatedProfile = { ...profile, xp: newXpTotal, level: newLevel }
@@ -53,13 +54,26 @@ export const useProfile = () => {
             return { error }
         }
 
-        return { data: data[0] }
+        return { data: data[0], levelledUp: hasLevelledUp, newLevel }
+    }
+
+    const updateAvatar = async (url) => {
+        if (!profile) return
+
+        setProfile({ ...profile, avatar_url: url })
+        const { error } = await supabase
+            .from('profiles')
+            .update({ avatar_url: url })
+            .eq('id', user.id)
+
+        return { error }
     }
 
     return {
         profile,
         loading,
         addXP,
+        updateAvatar,
         refreshProfile: fetchProfile
     }
 }

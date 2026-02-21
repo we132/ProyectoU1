@@ -101,6 +101,59 @@ export const useTasks = () => {
         }
     }
 
+    const editTask = async (taskId, updates) => {
+        if (!user) return
+
+        let uploadedImageUrl = updates.image_url
+
+        // Handle new image upload for existing task
+        if (updates.imageFile) {
+            const fileExt = updates.imageFile.name.split('.').pop()
+            const fileName = `${user.id}-${Math.random()}.${fileExt}`
+
+            const { data: uploadData, error: uploadError } = await supabase.storage
+                .from('task_images')
+                .upload(fileName, updates.imageFile)
+
+            if (!uploadError) {
+                const { data: { publicUrl } } = supabase.storage
+                    .from('task_images')
+                    .getPublicUrl(fileName)
+                uploadedImageUrl = publicUrl
+            }
+        }
+
+        const payload = {
+            title: updates.title,
+            description: updates.description || null,
+            difficulty: updates.difficulty,
+        }
+
+        // XP mapping in case difficulty changed
+        const xpMap = { 'easy': 10, 'medium': 50, 'hard': 100 }
+        if (updates.difficulty) {
+            payload.xp_reward = xpMap[updates.difficulty] || 10
+        }
+
+        if (uploadedImageUrl !== undefined) {
+            payload.image_url = uploadedImageUrl
+        }
+
+        const { data, error } = await supabase
+            .from('tasks')
+            .update(payload)
+            .eq('id', taskId)
+            .select()
+
+        if (error) {
+            console.error('Error editing task:', error)
+            return { error }
+        } else {
+            setTasks(prev => prev.map(t => t.id === taskId ? data[0] : t))
+            return { data: data[0] }
+        }
+    }
+
     const updateTaskStatus = async (taskId, newStatus) => {
         const { data, error } = await supabase
             .from('tasks')
@@ -137,6 +190,7 @@ export const useTasks = () => {
         tasks,
         loading,
         addTask,
+        editTask,
         updateTaskStatus,
         deleteTask,
         refreshTasks: fetchTasks

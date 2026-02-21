@@ -3,43 +3,24 @@ import * as dotenv from 'dotenv'
 import { join } from 'path'
 
 dotenv.config({ path: join(process.cwd(), '.env.local') })
+const supabase = createClient(process.env.VITE_SUPABASE_URL, process.env.VITE_SUPABASE_ANON_KEY)
 
-const supabaseUrl = process.env.VITE_SUPABASE_URL
-const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY
+async function test() {
+    const { data, error } = await supabase.from('tasks').select('*').limit(1)
+    if (error) {
+        console.error('Error fetching tasks:', error.message)
+        return
+    }
 
-const supabase = createClient(supabaseUrl, supabaseAnonKey)
+    if (data.length > 0) {
+        console.log('Columns in tasks:', Object.keys(data[0]))
+    } else {
+        console.log('No tasks found, attempting minimal insert to see error...')
 
-async function testConnection() {
-    console.log('--- THE FORGE: DIAGNOSTIC SYSTEM ---')
-    console.log('⚡ Initializing Database Connection...')
-
-    try {
-        const { data: authData, error: authError } = await supabase.auth.getSession()
-        if (authError) throw authError
-        console.log('✅ Auth Module: ONLINE')
-
-        const { data: profilesData, error: profilesError } = await supabase.from('profiles').select('id').limit(1)
-        if (profilesError) {
-            console.log('🔴 ERROR IN PROFILES TABLE:', profilesError.message)
-        } else {
-            console.log('✅ Table `profiles`: ONLINE & ACCESSIBLE')
-        }
-
-        const { data: tasksData, error: tasksError } = await supabase.from('tasks').select('id').limit(1)
-        if (tasksError) {
-            console.log('🔴 ERROR IN TASKS TABLE:', tasksError.message)
-        } else {
-            console.log('✅ Table `tasks`: ONLINE & ACCESSIBLE')
-        }
-
-        console.log('------------------------------------')
-        console.log('🟢 ALL SYSTEMS OPERATIONAL. CONNECTION SUCCESSFUL.')
-
-    } catch (err) {
-        console.log('------------------------------------')
-        console.log('🔴 CONNECTION FAILED!')
-        console.error(err.message)
+        // Need an auth session for RLS. We might not have one in node unless we sign in.
+        // But we can check via throwing an intentional type error if the column doesn't exist
+        const { error: insertErr } = await supabase.from('tasks').insert([{ title: 'test', image_url: null }])
+        console.log('Insert error pattern:', insertErr ? insertErr.message : 'No error')
     }
 }
-
-testConnection()
+test()

@@ -29,10 +29,12 @@
 
 body {
   background-color: var(--color-forge-900);
-  color: #f1f1f1;
+  color: var(--color-text-main, #f1f1f1);
   /* Soft off-white for better readability */
   margin: 0;
   font-family: var(--font-sans);
+  transition: background-color 0.5s ease;
+  /* Smooth transition when changing themes */
 }
 
 /* Custom Scrollbar for a premium feel */
