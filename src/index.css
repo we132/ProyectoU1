@@ -1,0 +1,22 @@
+@import "tailwindcss";
+
+@theme {
+  --color-forge-900: #0a0a0f;
+  --color-forge-800: #13141c;
+  --color-forge-accent: #00ffcc;
+  --color-forge-danger: #ff003c;
+  --color-forge-xp: #bf00ff;
+
+  --font-sans: "Inter", sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+
+  --shadow-neon: 0 0 10px rgba(0, 255, 204, 0.5), 0 0 20px rgba(0, 255, 204, 0.3);
+  --shadow-neon-xp: 0 0 10px rgba(191, 0, 255, 0.5), 0 0 20px rgba(191, 0, 255, 0.3);
+}
+
+body {
+  background-color: var(--color-forge-900);
+  color: #ffffff;
+  margin: 0;
+  font-family: var(--font-sans);
+}
