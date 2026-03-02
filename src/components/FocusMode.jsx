@@ -2,9 +2,14 @@ import { useState, useEffect, useRef } from 'react';
 import { X, Play, Pause, RotateCcw, Headphones, Music2 } from 'lucide-react';
 
 const STATIONS = [
-    { id: 'lofi', name: 'Lo-Fi Chill', streamUrl: 'https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3' }, // Pixabay Lofi
-    { id: 'synthwave', name: 'Neon Synthwave', streamUrl: 'https://cdn.pixabay.com/download/audio/2022/10/18/audio_31c2730e64.mp3' }, // Pixabay Synthwave
-    { id: 'top', name: 'Twenty One Pilots (Mix)', streamUrl: '/audio/top.mp3' } // Local Custom File
+    { id: 'lofi', name: 'Lo-Fi Chill', streamUrls: ['https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3'] }, // Pixabay Lofi
+    {
+        id: 'top', name: 'Twenty One Pilots (Mix)', streamUrls: [
+            '/audio/top1.mp3', '/audio/top2.mp3', '/audio/top3.mp3', '/audio/top4.mp3', '/audio/top5.mp3',
+            '/audio/top6.mp3', '/audio/top7.mp3', '/audio/top8.mp3', '/audio/top9.mp3', '/audio/top10.mp3',
+            '/audio/top11.mp3', '/audio/top12.mp3', '/audio/top13.mp3', '/audio/top14.mp3'
+        ]
+    } // 14 Local Custom Files
 ]
 
 export const FocusMode = ({ isOpen, onClose }) => {
@@ -12,6 +17,7 @@ export const FocusMode = ({ isOpen, onClose }) => {
     const [isActive, setIsActive] = useState(false);
     const [musicEnabled, setMusicEnabled] = useState(false);
     const [activeStation, setActiveStation] = useState(STATIONS[0]);
+    const [trackIndex, setTrackIndex] = useState(0);
     const audioRef = useRef(null);
 
     useEffect(() => {
@@ -32,11 +38,22 @@ export const FocusMode = ({ isOpen, onClose }) => {
     useEffect(() => {
         if (musicEnabled && audioRef.current) {
             audioRef.current.volume = 0.3;
-            audioRef.current.play().catch(e => console.error("Audio block:", e));
+            // Play returns a promise, which we need to catch securely.
+            // A slight delay ensures the new source is loaded if the trackIndex changed.
+            const playPromise = audioRef.current.play();
+            if (playPromise !== undefined) {
+                playPromise.catch(e => console.error("Audio block:", e));
+            }
         } else if (!musicEnabled && audioRef.current) {
             audioRef.current.pause();
         }
-    }, [musicEnabled, activeStation]);
+    }, [musicEnabled, activeStation, trackIndex]);
+
+    const handleTrackEnd = () => {
+        if (activeStation.streamUrls.length > 1) {
+            setTrackIndex((prevIndex) => (prevIndex + 1) % activeStation.streamUrls.length);
+        }
+    };
 
     const toggleTimer = () => setIsActive(!isActive);
 
@@ -59,9 +76,11 @@ export const FocusMode = ({ isOpen, onClose }) => {
             {/* Hidden Native Audio Element */}
             <audio
                 ref={audioRef}
-                src={activeStation.streamUrl}
+                src={activeStation.streamUrls[trackIndex]}
                 preload="none"
                 crossOrigin="anonymous"
+                onEnded={handleTrackEnd}
+                loop={activeStation.streamUrls.length === 1}
             />
 
             {/* Main Focus UI */}
@@ -125,7 +144,10 @@ export const FocusMode = ({ isOpen, onClose }) => {
                         {STATIONS.map(station => (
                             <button
                                 key={station.id}
-                                onClick={() => setActiveStation(station)}
+                                onClick={() => {
+                                    setActiveStation(station);
+                                    setTrackIndex(0);
+                                }}
                                 className={`px-4 py-2 rounded-full text-xs font-bold transition-all ${activeStation.id === station.id ? 'bg-[var(--color-forge-accent)] text-white shadow-neon' : 'text-gray-400 hover:text-white'}`}
                             >
                                 {station.name}
