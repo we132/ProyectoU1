@@ -47,8 +47,8 @@ export const NoteEditor = ({ activeNote, onClose, onSaveText, onAttachSketch }) 
     }
 
     return (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
-            <div className="bg-[var(--color-forge-900)] w-full max-w-5xl h-[90vh] rounded-3xl border border-[var(--color-forge-700)] shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-300">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex items-center justify-center p-0 sm:p-4">
+            <div className="bg-[var(--color-forge-900)] w-full max-w-5xl h-full sm:h-[90vh] rounded-none sm:rounded-3xl border-0 sm:border border-[var(--color-forge-700)] shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-300">
 
                 {/* Editor Top Bar */}
                 <div className="flex items-center justify-between p-4 border-b border-[var(--color-forge-700)] bg-[var(--color-forge-800)] shadow-sm z-10">
@@ -79,21 +79,22 @@ export const NoteEditor = ({ activeNote, onClose, onSaveText, onAttachSketch }) 
                 </div>
 
                 {/* Mode Toggles */}
-                <div className="flex justify-center p-3 border-b border-[var(--color-forge-700)] bg-[var(--color-forge-800)]/40 gap-4">
+                <div className="flex justify-center p-3 border-b border-[var(--color-forge-700)] bg-[var(--color-forge-800)]/40 gap-2 sm:gap-4 flex-wrap">
                     <button
                         onClick={() => setMode('text')}
-                        className={`flex items-center gap-2 px-6 py-2 rounded-full font-bold transition-all ${mode === 'text' ? 'bg-[var(--color-text-main)] text-[var(--color-forge-900)] shadow-sm' : 'text-gray-400 border border-[var(--color-forge-700)] hover:text-white'}`}
+                        className={`flex items-center justify-center gap-2 px-3 sm:px-6 py-2 rounded-full font-bold text-xs sm:text-base transition-all flex-1 sm:flex-none ${mode === 'text' ? 'bg-[var(--color-text-main)] text-[var(--color-forge-900)] shadow-sm' : 'text-gray-400 border border-[var(--color-forge-700)] hover:text-white'}`}
                     >
-                        <Edit3 size={18} />
+                        <Edit3 size={16} className="sm:w-[18px] sm:h-[18px]" />
                         Rich Text
                     </button>
 
                     <button
                         onClick={() => setMode('sketch')}
-                        className={`flex items-center gap-2 px-6 py-2 rounded-full font-bold transition-all ${mode === 'sketch' ? 'bg-[var(--color-forge-accent)] text-white shadow-neon' : 'text-gray-400 border border-[var(--color-forge-700)] hover:text-white'}`}
+                        className={`flex items-center justify-center gap-2 px-3 sm:px-6 py-2 rounded-full font-bold text-xs sm:text-base transition-all flex-1 sm:flex-none ${mode === 'sketch' ? 'bg-[var(--color-forge-accent)] text-white shadow-neon' : 'text-gray-400 border border-[var(--color-forge-700)] hover:text-white'}`}
                     >
-                        <ImageIcon size={18} />
-                        Attach Canvas Drawing
+                        <ImageIcon size={16} className="sm:w-[18px] sm:h-[18px]" />
+                        <span className="hidden sm:inline">Attach Canvas Drawing</span>
+                        <span className="sm:hidden">Canvas</span>
                     </button>
                 </div>
 
@@ -101,13 +102,13 @@ export const NoteEditor = ({ activeNote, onClose, onSaveText, onAttachSketch }) 
                 <div className="flex-grow flex flex-col relative overflow-hidden bg-white">
 
                     {mode === 'text' ? (
-                        <div className="flex flex-col h-full w-full text-black">
+                        <div className="flex flex-col h-full w-full text-black overflow-y-auto">
                             <ReactQuill
                                 theme="snow"
                                 value={content}
                                 onChange={setContent}
                                 modules={modules}
-                                className="flex-grow flex flex-col h-[calc(100%-42px)] border-none"
+                                className="flex-grow flex flex-col min-h-[300px] sm:h-[calc(100%-42px)] border-none"
                                 placeholder="Start typing your ideas here..."
                             />
 

@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
-import { Plus, X, Upload, Image as ImageIcon, Loader2 } from 'lucide-react'
+import { Plus, X, Upload, Image as ImageIcon, Loader2, Crop } from 'lucide-react'
 import { useLanguage } from '../context/LanguageContext'
+import { CropModal } from './CropModal'
 
 export const TaskModal = ({ onSaveTask, initialData = null, isOpen, onClose, onOpenNew }) => {
     const { t } = useLanguage()
@@ -10,6 +11,7 @@ export const TaskModal = ({ onSaveTask, initialData = null, isOpen, onClose, onO
     const [description, setDescription] = useState('')
     const [difficulty, setDifficulty] = useState('medium')
     const [imageFile, setImageFile] = useState(null)
+    const [cropImageSrc, setCropImageSrc] = useState(null)
 
     const fileInputRef = useRef(null)
 
@@ -26,6 +28,7 @@ export const TaskModal = ({ onSaveTask, initialData = null, isOpen, onClose, onO
                 setDifficulty('medium')
             }
             setImageFile(null)
+            setCropImageSrc(null)
         }
     }, [isOpen, initialData])
 
@@ -49,7 +52,13 @@ export const TaskModal = ({ onSaveTask, initialData = null, isOpen, onClose, onO
 
     const handleFileChange = (e) => {
         if (e.target.files && e.target.files[0]) {
-            setImageFile(e.target.files[0])
+            const file = e.target.files[0]
+            const imageUrl = URL.createObjectURL(file)
+            setCropImageSrc(imageUrl)
+        }
+        // Reset the input value so selecting the same file again triggers onChange
+        if (fileInputRef.current) {
+            fileInputRef.current.value = ''
         }
     }
 
@@ -133,9 +142,9 @@ export const TaskModal = ({ onSaveTask, initialData = null, isOpen, onClose, onO
                                         onClick={() => fileInputRef.current?.click()}
                                         className={`w-full bg-[var(--color-forge-900)] border border-[var(--color-forge-700)] rounded-lg h-12 flex items-center justify-center gap-2 cursor-pointer hover:border-[var(--color-forge-accent)] transition-colors text-sm ${imageFile ? 'text-[var(--color-forge-accent)]' : 'text-gray-400'}`}
                                     >
-                                        {imageFile ? <ImageIcon size={18} /> : <Upload size={18} />}
+                                        {imageFile ? <Crop size={18} /> : <Upload size={18} />}
                                         <span className="truncate max-w-[120px]">
-                                            {imageFile ? imageFile.name : initialData?.image_url ? 'Replace Image' : t('uploadImage')}
+                                            {imageFile ? 'Cropped & Ready' : initialData?.image_url ? 'Replace Image' : t('uploadImage')}
                                         </span>
                                     </div>
                                     <input
@@ -171,6 +180,20 @@ export const TaskModal = ({ onSaveTask, initialData = null, isOpen, onClose, onO
                         </form>
                     </div>
                 </div>
+            )}
+
+            {/* Crop Overlay */}
+            {cropImageSrc && (
+                <CropModal
+                    imageSrc={cropImageSrc}
+                    onCropComplete={(croppedFile) => {
+                        setImageFile(croppedFile)
+                        setCropImageSrc(null)
+                    }}
+                    onCancel={() => {
+                        setCropImageSrc(null)
+                    }}
+                />
             )}
         </div>
     )

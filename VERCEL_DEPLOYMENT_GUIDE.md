@@ -1,44 +1,45 @@
-# 🚀 Guía Definitiva de Despliegue: The Forge en Vercel
+# 🚀 Guía de Despliegue en Vercel + Supabase
 
-Has construido una aplicación gamificada increíble con React y Supabase. Ahora es momento de ponerla en internet de manera gratuita y profesional usando **Vercel**.
+¡Hola David! Si estás viendo un error de `Failed to fetch` al intentar iniciar sesión en tu página web ya subida a internet (Vercel), eso significa que **la versión en la Nube de tu código no sabe con quién conectarse**. 
 
-Sigue estos pasos precisos:
+En tu computadora local, la aplicación sabe conectarse a tu base de datos gracias al archivo secreto llamado `.env.local`. Por seguridad, Git **nunca** sube ese archivo a la nube, así que Vercel está ciego y cuando intenta "hacer fetch" para iniciar sesión, truena.
 
-## Paso 1: Sube tu código a GitHub (Si no lo has hecho)
-Vercel se conecta directamente a tu repositorio de GitHub para publicar el código cada vez que haces un cambio.
-1. Asegúrate de haber hecho `git add .`, `git commit` y `git push` de tu código más reciente.
-
-## Paso 2: Importar a Vercel
-1. Ve a [vercel.com](https://vercel.com/) e inicia sesión con Github.
-2. Dale al botón negro **"Add New Project"**.
-3. Verás una lista con tus repositorios de Github. Busca `ProyectoU1` (o el nombre de tu repo) y dale a **Import**.
-
-## Paso 3: Configurar el Entorno (¡El paso más importante!)
-Antes de darle a Deploy, tienes que decirle a Vercel cómo conectarse a la nube de base de datos segura.
-1. En la pantalla de importación, abre la pestaña que dice **"Environment Variables"** (Variables de Entorno).
-2. Debes agregar EXACTAMENTE las dos llaves maestras que tienes guardadas en tu archivo local `.env.local` en tu Visual Studio Code.
-   - **Name**: `VITE_SUPABASE_URL` | **Value**: *(Pega aquí la URL de tu proyecto de Supabase)*
-   - Dale a "Add".
-   - **Name**: `VITE_SUPABASE_ANON_KEY` | **Value**: *(Pega aquí la clave larga ANON KEY de tu Supabase)*
-   - Dale a "Add".
-
-> ⚠️ **NUNCA** subas el archivo `.env.local` a Github, es por eso que lo configuramos manualmente dentro del servidor de Vercel en este paso.
-
-## Paso 4: ¡Desplegar!
-1. Deja todo lo demás (Framework: Vite, Build Command: `npm run build`) en sus ajustes predeterminados.
-2. Presiona el botón **Deploy**. 
-3. Vercel comenzará a construir tu página web. En 1-2 minutos la pantalla se llenará de confeti virtual y te dará un Link Oficial (Ej: `https://the-forge-app.vercel.app`).
+A continuación, sigue estos pasos exactos para arreglar tanto Vercel como Supabase y dejar tu app 100% funcional en internet.
 
 ---
 
-## Paso 5: Configuración Final de Seguridad en Supabase
-Si intentas iniciar sesión desde el nuevo link de Vercel, ¡Supabase asustado te va a bloquear por seguridad! Supabase solo confía en `localhost:5173`. Debemos autorizar a Vercel:
+## Misión 1: Darle las "Llaves" a Vercel 🔑
 
-1. Ve a la consola de [Supabase](https://supabase.com).
-2. Ve al menú lateral izquierdo, haz clic en **Authentication**.
-3. Entra a **URL Configuration**.
-4. En **Site URL**, cambia `http://localhost:5173` por el nuevo link completo que te dio Vercel (Ej: `https://tu-proyecto.vercel.app`).
-5. Baja a **Redirect URLs** y dale a *Add URL*. Agrega de nuevo exactamente el link de Vercel. Guarda los cambios.
+Tenemos que enseñarle manualmente a Vercel tus códigos secretos.
 
-¡FIN! 🎉 
-Tu aplicación ya es pública, segura, su base de datos está protegida por políticas criptográficas (RLS) y está lista para añadir usuarios reales al tablero Kanban.
+1. Entra a tu panel de **Vercel** (`https://vercel.com/dashboard`) y haz clic en tu proyecto (`ProyectoU1`).
+2. Ve a la pestaña de **Settings** de tu proyecto (está arriba en el menú horizontal).
+3. En la barra lateral izquierda, busca la sección **Environment Variables** (o Variables de Entorno).
+4. Aquí vas a añadir **DOS** variables exactas tal cual como las tienes en tu archivo `.env.local` en tu compu.
+    - Donde dice `Key`, escribe: `VITE_SUPABASE_URL`
+    - Donde dice `Value`, pega el enlace de tu base de datos (Ej: `https://[tu-id-supabase].supabase.co`)
+    - Dale al botón **Save**.
+5. Ahora agrega la otra:
+    - Donde dice `Key`, escribe: `VITE_SUPABASE_ANON_KEY`
+    - Donde dice `Value`, pega esa llave hiper larga que parece un montón de números y letras al azar (tu API KEY).
+    - Dale al botón **Save**.
+6. **MUY IMPORTANTE:** Para que Vercel agarre estas nuevas llaves, tienes que forzarlo a reconstruir la página web. 
+   - Ve a la pestaña **Deployments** en el menú de arriba.
+   - Dale clic a los tres puntitos (`...`) en el cuadro de tu último despliegue (arribita de tu código).
+   - Haz clic en **Redeploy**.
+   - Espera a que termine. ¡Boom! Vercel ahora sí tiene conexión con Supabase.
+
+---
+
+## Misión 2: Darle permiso a tu App Web en Supabase 🛡️
+
+Ahora Supabase te va a bloquear por un error nuevo (CORS). Supabase tiene mucha seguridad y por defecto solo te deja iniciar sesión desde la computadora local (`localhost`). Como ahora mandaremos señales de login *desde el link de Vercel*, tenemos que registrar ese dominio en la lista blanca de la bóveda.
+
+1. Copia tu URL pública de Vercel (Ej. `https://proyectou1-david.vercel.app`).
+2. Ve al panel de **Supabase** (`https://supabase.com/dashboard/`).
+3. En el menú de la izquierda, entra al apartado de **Authentication** (ícono de dos personas).
+4. En el sub-menú de Auth (bajo Configuration), entra a **URL Configuration**.
+5. En la sección de **Site URL**, asegúrate de que esté tu URL de Vercel (y de no tener una diagonal `/` al final).
+6. Ahora, un poco más abajo verás **Redirect URLs**. Asegúrate de agregar tu URL de Vercel ahí dándole al botón verde "Add URL" (ej. `https://proyectou1-[...].vercel.app/**`). También asegúrate de que `http://localhost:5173/**` siga en esa lista para que tu entorno de pruebas local no se rompa.
+
+¡Aplica ambos cambios! Espera 1 minutito a que los servidores conecten todo, abre el link de Vercel... ¡Y tu login pasará perfectamente! 🚀

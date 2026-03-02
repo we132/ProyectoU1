@@ -18,6 +18,7 @@ export const FocusMode = ({ isOpen, onClose }) => {
     const [musicEnabled, setMusicEnabled] = useState(false);
     const [activeStation, setActiveStation] = useState(STATIONS[0]);
     const [trackIndex, setTrackIndex] = useState(0);
+    const [playError, setPlayError] = useState(false);
     const audioRef = useRef(null);
 
     useEffect(() => {
@@ -42,7 +43,12 @@ export const FocusMode = ({ isOpen, onClose }) => {
             // A slight delay ensures the new source is loaded if the trackIndex changed.
             const playPromise = audioRef.current.play();
             if (playPromise !== undefined) {
-                playPromise.catch(e => console.error("Audio block:", e));
+                playPromise.then(() => {
+                    setPlayError(false);
+                }).catch(e => {
+                    console.error("Audio block:", e);
+                    setPlayError(true);
+                });
             }
         } else if (!musicEnabled && audioRef.current) {
             audioRef.current.pause();
@@ -135,6 +141,21 @@ export const FocusMode = ({ isOpen, onClose }) => {
 
                 {/* Station Selector */}
                 <div className="flex flex-col items-center gap-3">
+                    {playError && (
+                        <div className="mb-2 bg-forge-danger/20 border border-forge-danger text-forge-danger px-4 py-2 rounded-xl text-center flex flex-col items-center gap-2 animate-in fade-in slide-in-from-bottom-2">
+                            <span className="text-xs font-bold">Browser blocked audio.</span>
+                            <button
+                                onClick={() => {
+                                    audioRef.current?.play();
+                                    setPlayError(false);
+                                }}
+                                className="bg-forge-danger text-white px-4 py-1 rounded-full text-xs font-bold hover:scale-105 transition-transform"
+                            >
+                                Force Play Audio
+                            </button>
+                        </div>
+                    )}
+
                     <p className="text-sm font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
                         <Music2 size={16} />
                         {musicEnabled ? "RADIO STREAMING" : "RADIO OFF"}

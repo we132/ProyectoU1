@@ -1,5 +1,5 @@
-import { useState, useRef, useEffect } from 'react';
-import { Settings, X, LogOut, CheckCircle2, User, Upload, Palette, Loader2 } from 'lucide-react';
+import { useState, useRef } from 'react';
+import { Settings, X, LogOut, CheckCircle2, User, Upload, Palette, Loader2, Image as ImageIcon, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useTheme } from '../context/ThemeContext';
@@ -9,9 +9,17 @@ export const SettingsModal = ({ isOpen, onClose }) => {
     const { signOut, user } = useAuth();
     const { t } = useLanguage();
     const { applyTheme, currentTheme, presets } = useTheme();
-    const { profile, uploadAvatar } = useProfile();
+    const { profile, uploadAvatar, updateAvatar } = useProfile();
 
     const [isUploading, setIsUploading] = useState(false);
+    const [avatarPage, setAvatarPage] = useState(0);
+    const AVATARS_PER_PAGE = 12;
+    const TOTAL_AVATARS = 24;
+
+    // Procedurally generated default avatars
+    const defaultAvatars = Array.from({ length: TOTAL_AVATARS }).map((_, i) => `https://api.dicebear.com/9.x/bottts/svg?seed=ForgeHero${i}&backgroundColor=transparent`);
+    const paginatedAvatars = defaultAvatars.slice(avatarPage * AVATARS_PER_PAGE, (avatarPage + 1) * AVATARS_PER_PAGE);
+
     const fileInputRef = useRef(null);
 
     if (!isOpen) return null;
@@ -102,93 +110,142 @@ export const SettingsModal = ({ isOpen, onClose }) => {
                     </button>
                 </div>
 
-                {/* Right Column: Theme Settings */}
-                <div className="w-full sm:w-2/3 p-8">
-                    <div className="flex items-center gap-3 mb-6">
-                        <Settings className="text-forge-accent" size={24} />
-                        <h2 className="text-2xl font-bold text-[var(--color-text-main)]">Aesthetic Engine</h2>
-                    </div>
+                {/* Right Column: Scrollable Settings */}
+                <div className="w-full sm:w-2/3 p-8 overflow-y-auto max-h-[85vh]">
+                    {/* Theme Settings Wrapper */}
+                    <div className="mb-10">
+                        <div className="flex items-center gap-3 mb-6">
+                            <Settings className="text-[var(--color-forge-accent)]" size={24} />
+                            <h2 className="text-2xl font-bold text-[var(--color-text-main)]">Aesthetic Engine</h2>
+                        </div>
 
-                    <p className="text-sm text-gray-400 mb-6">
-                        Select a cinematic theme to override the system colors. This signature is tied to your profile across all devices.
-                    </p>
+                        <p className="text-sm text-gray-400 mb-6">
+                            Select a cinematic theme to override the system colors. This signature is tied to your profile across all devices.
+                        </p>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        {presets.map(theme => {
-                            const isActive = currentTheme?.id === theme.id;
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            {presets.map(theme => {
+                                const isActive = currentTheme?.id === theme.id;
 
-                            return (
-                                <button
-                                    key={theme.id}
-                                    onClick={() => applyTheme(theme)}
-                                    className={`relative border rounded-xl overflow-hidden transition-all text-left flex flex-col ${isActive
-                                        ? 'border-forge-accent ring-1 ring-forge-accent shadow-neon'
-                                        : 'border-forge-700 hover:border-gray-500'
-                                        }`}
-                                    style={{ backgroundColor: theme.surface }}
-                                >
-                                    <div className="h-4 w-full" style={{ backgroundColor: theme.accent }}></div>
-                                    <div className="p-4">
-                                        <h4 className="font-bold text-sm mb-2" style={{ color: theme.text }}>
-                                            {theme.name}
+                                return (
+                                    <button
+                                        key={theme.id}
+                                        onClick={() => applyTheme(theme)}
+                                        className={`relative border rounded-xl overflow-hidden transition-all text-left flex flex-col ${isActive
+                                            ? 'border-forge-accent ring-1 ring-forge-accent shadow-neon'
+                                            : 'border-forge-700 hover:border-gray-500'
+                                            }`}
+                                        style={{ backgroundColor: theme.surface }}
+                                    >
+                                        <div className="h-4 w-full" style={{ backgroundColor: theme.accent }}></div>
+                                        <div className="p-4">
+                                            <h4 className="font-bold text-sm mb-2" style={{ color: theme.text }}>
+                                                {theme.name}
+                                            </h4>
+                                            <div className="flex gap-2">
+                                                <div className="w-4 h-4 rounded-full border border-white/20" style={{ backgroundColor: theme.bg }}></div>
+                                                <div className="w-4 h-4 rounded-full border border-white/20" style={{ backgroundColor: theme.surface }}></div>
+                                                <div className="w-4 h-4 rounded-full border border-white/20" style={{ backgroundColor: theme.accent }}></div>
+                                            </div>
+                                        </div>
+
+                                        {isActive && (
+                                            <div className="absolute top-2 right-2 text-forge-900 bg-forge-accent rounded-full p-0.5">
+                                                <CheckCircle2 size={14} />
+                                            </div>
+                                        )}
+                                    </button>
+                                )
+                            })}
+
+                            {/* Custom Color Picker Hex Block */}
+                            <div
+                                className={`relative border rounded-xl overflow-hidden transition-all text-left flex flex-col ${currentTheme?.id === 'custom'
+                                    ? 'border-[var(--color-forge-accent)] ring-1 ring-[var(--color-forge-accent)] shadow-neon'
+                                    : 'border-forge-700 hover:border-gray-500'
+                                    }`}
+                                style={{ backgroundColor: currentTheme?.surface || '#1a1a1a' }}
+                            >
+                                <label className="cursor-pointer flex-grow flex flex-col h-full w-full">
+                                    <div className="h-4 w-full relative" style={{ backgroundColor: currentTheme?.accent || '#ffffff' }}>
+                                    </div>
+                                    <div className="p-4 flex-grow flex flex-col justify-between">
+                                        <h4 className="font-bold text-sm mb-2 text-white flex items-center gap-2">
+                                            <Palette size={16} /> Custom Palette
                                         </h4>
-                                        <div className="flex gap-2">
-                                            <div className="w-4 h-4 rounded-full border border-white/20" style={{ backgroundColor: theme.bg }}></div>
-                                            <div className="w-4 h-4 rounded-full border border-white/20" style={{ backgroundColor: theme.surface }}></div>
-                                            <div className="w-4 h-4 rounded-full border border-white/20" style={{ backgroundColor: theme.accent }}></div>
+                                        <div className="flex items-center gap-3">
+                                            <input
+                                                type="color"
+                                                value={currentTheme?.accent || '#ffffff'}
+                                                onChange={(e) => {
+                                                    applyTheme({
+                                                        ...currentTheme,
+                                                        id: 'custom',
+                                                        name: 'Custom',
+                                                        accent: e.target.value
+                                                    })
+                                                }}
+                                                className="w-8 h-8 rounded shrink-0 bg-transparent border-none cursor-pointer p-0"
+                                            />
+                                            <span className="text-xs text-gray-400 font-mono">Pick Hex</span>
                                         </div>
                                     </div>
 
-                                    {isActive && (
-                                        <div className="absolute top-2 right-2 text-forge-900 bg-forge-accent rounded-full p-0.5">
+                                    {currentTheme?.id === 'custom' && (
+                                        <div className="absolute top-2 right-2 text-forge-900 bg-[var(--color-forge-accent)] rounded-full p-0.5">
                                             <CheckCircle2 size={14} />
                                         </div>
                                     )}
+                                </label>
+                            </div>
+                        </div>
+                    </div> {/* End Theme Wrapper */}
+
+                    {/* Avatar Gallery */}
+                    <div>
+                        <div className="flex items-center justify-between mb-6">
+                            <div className="flex items-center gap-3">
+                                <ImageIcon className="text-[var(--color-forge-accent)]" size={24} />
+                                <h2 className="text-xl font-bold text-[var(--color-text-main)]">Avatar Armory</h2>
+                            </div>
+
+                            {/* Pagination Controls */}
+                            <div className="flex items-center gap-2">
+                                <button
+                                    onClick={() => setAvatarPage(Math.max(0, avatarPage - 1))}
+                                    disabled={avatarPage === 0}
+                                    className="p-1 rounded-full border border-forge-700 text-gray-400 hover:text-white hover:bg-forge-700 disabled:opacity-30 transition-all"
+                                >
+                                    <ChevronLeft size={18} />
                                 </button>
-                            )
-                        })}
+                                <span className="text-xs font-bold text-gray-500">
+                                    {avatarPage + 1} / {Math.ceil(TOTAL_AVATARS / AVATARS_PER_PAGE)}
+                                </span>
+                                <button
+                                    onClick={() => setAvatarPage(Math.min(Math.ceil(TOTAL_AVATARS / AVATARS_PER_PAGE) - 1, avatarPage + 1))}
+                                    disabled={avatarPage >= Math.ceil(TOTAL_AVATARS / AVATARS_PER_PAGE) - 1}
+                                    className="p-1 rounded-full border border-forge-700 text-gray-400 hover:text-white hover:bg-forge-700 disabled:opacity-30 transition-all"
+                                >
+                                    <ChevronRight size={18} />
+                                </button>
+                            </div>
+                        </div>
 
-                        {/* Custom Color Picker Hex Block */}
-                        <div
-                            className={`relative border rounded-xl overflow-hidden transition-all text-left flex flex-col ${currentTheme?.id === 'custom'
-                                ? 'border-[var(--color-forge-accent)] ring-1 ring-[var(--color-forge-accent)] shadow-neon'
-                                : 'border-forge-700 hover:border-gray-500'
-                                }`}
-                            style={{ backgroundColor: currentTheme?.surface || '#1a1a1a' }}
-                        >
-                            <label className="cursor-pointer flex-grow flex flex-col h-full w-full">
-                                <div className="h-4 w-full relative" style={{ backgroundColor: currentTheme?.accent || '#ffffff' }}>
-                                </div>
-                                <div className="p-4 flex-grow flex flex-col justify-between">
-                                    <h4 className="font-bold text-sm mb-2 text-white flex items-center gap-2">
-                                        <Palette size={16} /> Custom Palette
-                                    </h4>
-                                    <div className="flex items-center gap-3">
-                                        <input
-                                            type="color"
-                                            value={currentTheme?.accent || '#ffffff'}
-                                            onChange={(e) => {
-                                                applyTheme({
-                                                    ...currentTheme,
-                                                    id: 'custom',
-                                                    name: 'Custom',
-                                                    accent: e.target.value
-                                                })
-                                            }}
-                                            className="w-8 h-8 rounded shrink-0 bg-transparent border-none cursor-pointer p-0"
-                                        />
-                                        <span className="text-xs text-gray-400 font-mono">Pick Hex</span>
-                                    </div>
-                                </div>
-
-                                {currentTheme?.id === 'custom' && (
-                                    <div className="absolute top-2 right-2 text-forge-900 bg-[var(--color-forge-accent)] rounded-full p-0.5">
-                                        <CheckCircle2 size={14} />
-                                    </div>
-                                )}
-                            </label>
+                        <div className="grid grid-cols-4 sm:grid-cols-6 gap-3">
+                            {paginatedAvatars.map((url, i) => (
+                                <button
+                                    key={i}
+                                    onClick={() => updateAvatar(url)}
+                                    className={`aspect-square rounded-xl border-2 overflow-hidden transition-all bg-forge-900 ${profile?.avatar_url === url
+                                        ? 'border-[var(--color-forge-accent)] shadow-neon scale-105'
+                                        : 'border-transparent hover:border-forge-700 hover:scale-105'}`}
+                                >
+                                    <img src={url} alt="Default Avatar" className="w-full h-full object-cover p-1" />
+                                </button>
+                            ))}
                         </div>
                     </div>
+
                 </div>
 
             </div>
