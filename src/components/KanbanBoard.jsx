@@ -10,9 +10,10 @@ import {
 } from '@dnd-kit/core'
 import { sortableKeyboardCoordinates, SortableContext, rectSortingStrategy, useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { CheckCircle2, Clock, ListTodo, Loader2 } from 'lucide-react'
+import { CheckCircle2, Clock, ListTodo, Loader2, Plus, X } from 'lucide-react'
 
 import { useTasks } from '../hooks/useTasks'
+import { useWorkspaces } from '../hooks/useWorkspaces'
 import { useProfile } from '../hooks/useProfile'
 import { useLanguage } from '../context/LanguageContext'
 import { TaskModal } from './TaskModal'
@@ -82,7 +83,15 @@ const Column = ({ id, title, tasks, icon: Icon, onDeleteTask, onEditTask }) => {
 
 export const KanbanBoard = () => {
     const { t } = useLanguage()
-    const { tasks, loading, addTask, editTask, updateTaskStatus, deleteTask } = useTasks()
+
+    // Workspace State
+    const [activeWorkspaceId, setActiveWorkspaceId] = useState(null)
+    const [isCreatingWorkspace, setIsCreatingWorkspace] = useState(false)
+    const [newWorkspaceName, setNewWorkspaceName] = useState('')
+
+    const { workspaces, createWorkspace, deleteWorkspace } = useWorkspaces()
+    const { tasks, loading, addTask, editTask, updateTaskStatus, deleteTask } = useTasks(activeWorkspaceId)
+
     const { addXP, updateAvatar } = useProfile()
 
     const [activeTask, setActiveTask] = useState(null)
@@ -95,6 +104,14 @@ export const KanbanBoard = () => {
     // Modal states
     const [isModalOpen, setIsModalOpen] = useState(false)
     const [editingTask, setEditingTask] = useState(null)
+
+    const handleCreateWorkspace = async (e) => {
+        if (e.key === 'Enter') {
+            await createWorkspace(newWorkspaceName)
+            setNewWorkspaceName('')
+            setIsCreatingWorkspace(false)
+        }
+    }
 
     useEffect(() => {
         setLocalTasks(tasks)
@@ -174,7 +191,57 @@ export const KanbanBoard = () => {
     }
 
     return (
-        <div className="flex flex-col h-full max-w-7xl mx-auto w-full relative">
+        <div className="flex flex-col h-full max-w-7xl mx-auto w-full relative animate-in fade-in duration-500">
+
+            {/* WORKSPACE SELECTOR TOP BAR */}
+            <div className="flex items-center gap-2 mb-6 overflow-x-auto pb-2 scrollbar-none">
+                <button
+                    onClick={() => setActiveWorkspaceId(null)}
+                    className={`px-5 py-2 rounded-full font-bold text-sm whitespace-nowrap transition-all ${activeWorkspaceId === null ? 'bg-[var(--color-forge-accent)] text-white shadow-neon' : 'bg-[var(--color-forge-800)] text-gray-400 hover:text-white border border-[var(--color-forge-700)]'}`}
+                >
+                    General
+                </button>
+
+                {workspaces.map(w => (
+                    <div
+                        key={w.id}
+                        onClick={() => setActiveWorkspaceId(w.id)}
+                        className={`group px-5 py-2 rounded-full font-bold text-sm whitespace-nowrap transition-all flex items-center gap-3 cursor-pointer ${activeWorkspaceId === w.id ? 'bg-[var(--color-forge-accent)] text-white shadow-neon' : 'bg-[var(--color-forge-800)] text-gray-400 hover:text-white border border-[var(--color-forge-700)]'}`}
+                    >
+                        <span>{w.name}</span>
+                        <button
+                            className={`opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded-full ${activeWorkspaceId === w.id ? 'hover:bg-white/20' : 'hover:bg-red-400/20 hover:text-red-400'}`}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                deleteWorkspace(w.id);
+                                if (activeWorkspaceId === w.id) setActiveWorkspaceId(null);
+                            }}
+                        >
+                            <X size={14} />
+                        </button>
+                    </div>
+                ))}
+
+                {isCreatingWorkspace ? (
+                    <div className="flex items-center gap-2 bg-[var(--color-forge-800)] border border-[var(--color-forge-accent)] rounded-full px-3 py-1.5 animate-in fade-in slide-in-from-left-2">
+                        <input
+                            autoFocus
+                            type="text"
+                            value={newWorkspaceName}
+                            onChange={e => setNewWorkspaceName(e.target.value)}
+                            onKeyDown={handleCreateWorkspace}
+                            className="bg-transparent outline-none text-white w-24 text-sm font-bold placeholder-gray-500"
+                            placeholder="Name..."
+                        />
+                        <button onClick={() => setIsCreatingWorkspace(false)} className="text-gray-400 hover:text-[var(--color-forge-danger)]"><X size={16} /></button>
+                    </div>
+                ) : (
+                    <button onClick={() => setIsCreatingWorkspace(true)} className="p-2 border border-dashed border-gray-600 text-gray-400 hover:border-white hover:text-white rounded-full transition-colors flex items-center justify-center flex-shrink-0" title="New Workspace">
+                        <Plus size={18} />
+                    </button>
+                )}
+            </div>
+
             {/* 1. Rich Task Creation Modal Launcher */}
             <TaskModal
                 isOpen={isModalOpen}

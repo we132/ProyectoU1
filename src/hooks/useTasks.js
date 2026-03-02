@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../services/supabase'
 import { useAuth } from '../context/AuthContext'
 
-export const useTasks = () => {
+export const useTasks = (activeWorkspaceId = null) => {
     const { user } = useAuth()
     const [tasks, setTasks] = useState([])
     const [loading, setLoading] = useState(true)
@@ -10,10 +10,20 @@ export const useTasks = () => {
     const fetchTasks = useCallback(async () => {
         if (!user) return
         setLoading(true)
-        const { data, error } = await supabase
+
+        let query = supabase
             .from('tasks')
             .select('*')
             .order('created_at', { ascending: false })
+
+        // Filter by workspace if one is active.
+        if (activeWorkspaceId) {
+            query = query.eq('workspace_id', activeWorkspaceId)
+        } else {
+            query = query.is('workspace_id', null)
+        }
+
+        const { data, error } = await query
 
         if (error) {
             console.error('Error fetching tasks:', error)
@@ -21,7 +31,7 @@ export const useTasks = () => {
             setTasks(data || [])
         }
         setLoading(false)
-    }, [user])
+    }, [user, activeWorkspaceId])
 
     useEffect(() => {
         fetchTasks()
@@ -83,7 +93,8 @@ export const useTasks = () => {
             difficulty,
             xp_reward: xpMap[difficulty] || 10,
             status: 'todo',
-            image_url: uploadedImageUrl
+            image_url: uploadedImageUrl,
+            workspace_id: activeWorkspaceId // Tie the task to the current subspace
         }
 
         const { data, error } = await supabase

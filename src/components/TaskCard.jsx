@@ -36,7 +36,8 @@ export const TaskCard = ({ task, onDelete, onEdit }) => {
             style={style}
             {...attributes}
             {...listeners}
-            className={`relative group bg-[var(--color-forge-800)] border border-[var(--color-forge-700)] rounded-xl mb-4 flex flex-col cursor-grab hover:border-gray-500 transition-colors ${isDragging ? 'ring-2 ring-[var(--color-forge-accent)] shadow-2xl scale-105' : 'shadow-sm'
+            className={`relative group bg-[var(--color-forge-800)] border rounded-xl mb-4 flex flex-col cursor-grab transition-colors ${isDragging ? 'ring-2 ring-[var(--color-forge-accent)] shadow-2xl scale-105 border-[var(--color-forge-accent)]' :
+                    task.status === 'done' ? 'border-green-500/50 shadow-[0_0_15px_rgba(34,197,94,0.15)] opacity-80' : 'border-[var(--color-forge-700)] hover:border-gray-500 shadow-sm'
                 }`}
         >
             {/* Thumbnail Area */}
@@ -113,6 +114,11 @@ export const TaskCard = ({ task, onDelete, onEdit }) => {
                     <span className="text-xs font-bold text-[var(--color-forge-xp)]">
                         +{task.xp_reward} XP
                     </span>
+                    {task.status === 'done' && (
+                        <span className="text-[10px] font-bold text-green-400 bg-green-400/10 px-2 py-0.5 rounded flex items-center gap-1">
+                            COMPLETED
+                        </span>
+                    )}
                 </div>
             </div>
         </div>

@@ -1,10 +1,18 @@
-import { useState, useEffect } from 'react';
-import { X, Play, Pause, RotateCcw, Headphones } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { X, Play, Pause, RotateCcw, Headphones, Music2 } from 'lucide-react';
+
+const STATIONS = [
+    { id: 'lofi', name: 'Lo-Fi Chill', streamUrl: 'https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3' }, // Pixabay Lofi
+    { id: 'synthwave', name: 'Neon Synthwave', streamUrl: 'https://cdn.pixabay.com/download/audio/2022/10/18/audio_31c2730e64.mp3' }, // Pixabay Synthwave
+    { id: 'top', name: 'Twenty One Pilots (Mix)', streamUrl: '/audio/top.mp3' } // Local Custom File
+]
 
 export const FocusMode = ({ isOpen, onClose }) => {
-    const [timeLeft, setTimeLeft] = useState(25 * 60); // 25 minutes mostly
+    const [timeLeft, setTimeLeft] = useState(25 * 60);
     const [isActive, setIsActive] = useState(false);
     const [musicEnabled, setMusicEnabled] = useState(false);
+    const [activeStation, setActiveStation] = useState(STATIONS[0]);
+    const audioRef = useRef(null);
 
     useEffect(() => {
         let interval = null;
@@ -15,10 +23,20 @@ export const FocusMode = ({ isOpen, onClose }) => {
         } else if (timeLeft === 0) {
             clearInterval(interval);
             setIsActive(false);
-            // Optional: Play a different chime here
+            if (audioRef.current) audioRef.current.pause();
         }
         return () => clearInterval(interval);
     }, [isActive, timeLeft]);
+
+    // Handle Audio Playback
+    useEffect(() => {
+        if (musicEnabled && audioRef.current) {
+            audioRef.current.volume = 0.3;
+            audioRef.current.play().catch(e => console.error("Audio block:", e));
+        } else if (!musicEnabled && audioRef.current) {
+            audioRef.current.pause();
+        }
+    }, [musicEnabled, activeStation]);
 
     const toggleTimer = () => setIsActive(!isActive);
 
@@ -38,22 +56,13 @@ export const FocusMode = ({ isOpen, onClose }) => {
     return (
         <div className="fixed inset-0 bg-[var(--color-forge-900)] z-[60] flex flex-col items-center justify-center p-4 animate-in fade-in duration-500">
 
-            {/* Background Ambience (Lo-Fi Girl Stream) */}
-            {musicEnabled && (
-                <div className="absolute inset-0 z-0 opacity-20 pointer-events-none mix-blend-screen overflow-hidden flex items-center justify-center">
-                    {/* Lofi Girl YouTube Radio - Autoplays */}
-                    <iframe
-                        width="150%"
-                        height="150%"
-                        src="https://www.youtube.com/embed/jfKfPfyJRdk?autoplay=1&controls=0&showinfo=0&mute=0&loop=1"
-                        title="Lofi Radio"
-                        frameBorder="0"
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        allowFullScreen
-                        className="min-w-full min-h-full"
-                    ></iframe>
-                </div>
-            )}
+            {/* Hidden Native Audio Element */}
+            <audio
+                ref={audioRef}
+                src={activeStation.streamUrl}
+                preload="none"
+                crossOrigin="anonymous"
+            />
 
             {/* Main Focus UI */}
             <div className="relative z-10 w-full max-w-lg bg-[var(--color-forge-800)]/80 backdrop-blur-xl border border-[var(--color-forge-accent)]/50 rounded-3xl p-10 flex flex-col items-center shadow-[0_0_50px_rgba(0,0,0,0.5)]">
@@ -99,15 +108,31 @@ export const FocusMode = ({ isOpen, onClose }) => {
                     <button
                         onClick={() => setMusicEnabled(!musicEnabled)}
                         className={`p-4 rounded-full border transition-all hover:scale-105 ${musicEnabled ? 'bg-forge-xp text-forge-900 border-forge-xp shadow-neon-xp' : 'bg-forge-900 text-gray-400 border-forge-700 hover:text-white'}`}
-                        title="Toggle Lo-Fi Music"
+                        title="Toggle Radio"
                     >
                         <Headphones size={24} />
                     </button>
                 </div>
 
-                <p className="text-sm text-gray-400 text-center uppercase tracking-widest">
-                    {musicEnabled ? "Lo-Fi STREAM ENABLED" : "SILENT MODE"}
-                </p>
+                {/* Station Selector */}
+                <div className="flex flex-col items-center gap-3">
+                    <p className="text-sm font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
+                        <Music2 size={16} />
+                        {musicEnabled ? "RADIO STREAMING" : "RADIO OFF"}
+                    </p>
+
+                    <div className={`flex items-center bg-forge-900 border border-forge-700 p-1 rounded-full transition-opacity ${musicEnabled ? 'opacity-100' : 'opacity-40 pointer-events-none'}`}>
+                        {STATIONS.map(station => (
+                            <button
+                                key={station.id}
+                                onClick={() => setActiveStation(station)}
+                                className={`px-4 py-2 rounded-full text-xs font-bold transition-all ${activeStation.id === station.id ? 'bg-[var(--color-forge-accent)] text-white shadow-neon' : 'text-gray-400 hover:text-white'}`}
+                            >
+                                {station.name}
+                            </button>
+                        ))}
+                    </div>
+                </div>
             </div>
         </div>
     );

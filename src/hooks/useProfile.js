@@ -57,6 +57,28 @@ export const useProfile = () => {
         return { data: data[0], levelledUp: hasLevelledUp, newLevel }
     }
 
+    const uploadAvatar = async (file) => {
+        if (!user || !profile) return { error: new Error('Not authenticated') }
+
+        const fileExt = file.name.split('.').pop()
+        const fileName = `${user.id}-${Math.random()}.${fileExt}`
+
+        const { error: uploadError } = await supabase.storage
+            .from('avatars')
+            .upload(fileName, file, { upsert: true })
+
+        if (uploadError) {
+            console.error('Avatar upload failed:', uploadError)
+            return { error: uploadError }
+        }
+
+        const { data: { publicUrl } } = supabase.storage
+            .from('avatars')
+            .getPublicUrl(fileName)
+
+        return await updateAvatar(publicUrl)
+    }
+
     const updateAvatar = async (url) => {
         if (!profile) return
 
@@ -74,6 +96,7 @@ export const useProfile = () => {
         loading,
         addXP,
         updateAvatar,
+        uploadAvatar,
         refreshProfile: fetchProfile
     }
 }
