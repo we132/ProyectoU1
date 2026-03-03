@@ -11,7 +11,9 @@ import { SettingsModal } from './components/SettingsModal'
 import { FocusMode } from './components/FocusMode'
 import { MusicPlayerModal } from './components/MusicPlayerModal'
 import { NotesView } from './components/NotesView'
+import { FlashcardsView } from './components/FlashcardsView'
 import { useProfile } from './hooks/useProfile'
+import { BookOpen } from 'lucide-react'
 
 // Protected Route Wrapper Component
 const ProtectedRoute = ({ children }) => {
@@ -64,7 +66,14 @@ function GlobalNav() {
                 className={`px-4 py-2 rounded-full text-sm font-bold flex items-center gap-2 transition-all ${location.pathname === '/notes' ? 'bg-forge-800 text-[var(--color-text-main)] shadow-sm border border-forge-700' : 'text-gray-400 hover:text-[var(--color-text-main)] hover:bg-forge-800/50'}`}
               >
                 <PenTool size={16} className={location.pathname === '/notes' ? 'text-forge-accent' : ''} />
-                Noteit
+                {t('notes')}
+              </Link>
+              <Link
+                to="/flashcards"
+                className={`px-4 py-2 rounded-full text-sm font-bold flex items-center gap-2 transition-all ${location.pathname === '/flashcards' ? 'bg-forge-800 text-[var(--color-text-main)] shadow-sm border border-forge-700' : 'text-gray-400 hover:text-[var(--color-text-main)] hover:bg-forge-800/50'}`}
+              >
+                <BookOpen size={16} className={location.pathname === '/flashcards' ? 'text-forge-accent' : ''} />
+                {t('flashcards')}
               </Link>
             </div>
           )}
@@ -155,7 +164,7 @@ function BottomNav({ onOpenMusic }) {
 
         <button
           onClick={onOpenMusic}
-          className="flex flex-col items-center justify-center p-2 rounded-xl transition-all w-1/3 text-gray-500 hover:text-gray-300"
+          className="flex flex-col items-center justify-center p-2 rounded-xl transition-all w-1/4 text-gray-500 hover:text-gray-300"
         >
           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mb-1"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>
           <span className="text-[10px] uppercase font-bold tracking-widest">Radio</span>
@@ -165,10 +174,20 @@ function BottomNav({ onOpenMusic }) {
 
         <Link
           to="/notes"
-          className={`flex flex-col items-center justify-center p-2 rounded-xl transition-all w-1/3 ${location.pathname === '/notes' ? 'text-forge-accent' : 'text-gray-500 hover:text-gray-300'}`}
+          className={`flex flex-col items-center justify-center p-2 rounded-xl transition-all w-1/4 ${location.pathname === '/notes' ? 'text-forge-accent' : 'text-gray-500 hover:text-gray-300'}`}
         >
           <PenTool size={24} className="mb-1" />
-          <span className="text-[10px] uppercase font-bold tracking-widest">Notes</span>
+          <span className="text-[10px] uppercase font-bold tracking-widest">{t('notes')}</span>
+        </Link>
+
+        <div className="w-[1px] h-8 bg-forge-700/50"></div>
+
+        <Link
+          to="/flashcards"
+          className={`flex flex-col items-center justify-center p-2 rounded-xl transition-all w-1/4 ${location.pathname === '/flashcards' ? 'text-forge-accent' : 'text-gray-500 hover:text-gray-300'}`}
+        >
+          <BookOpen size={24} className="mb-1" />
+          <span className="text-[10px] uppercase font-bold tracking-widest flex-shrink-0 leading-none truncate w-full text-center">Decks</span>
         </Link>
       </div>
     </div>
@@ -205,6 +224,14 @@ function AppContent() {
             element={
               <ProtectedRoute>
                 <NotesView />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/flashcards"
+            element={
+              <ProtectedRoute>
+                <FlashcardsView />
               </ProtectedRoute>
             }
           />

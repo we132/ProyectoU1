@@ -46,7 +46,21 @@ export const translations = {
         hard: 'Difícil (+100 XP)',
         uploadImage: 'Subir miniatura',
         cancel: 'Cancelar',
-        save: 'Guardar Tarea'
+        save: 'Guardar Tarea',
+        // Analytics & Settings
+        focusAnalytics: 'Estadísticas de Enfoque',
+        past7Days: 'Últimos 7 Días',
+        minsTotal: 'Mins en Total (Todo el tiempo)',
+        aestheticEngine: 'Motor Estético',
+        customPalette: 'Paleta Personalizada',
+        avatarArmory: 'Armería de Avatares',
+        // Views
+        board: 'Tablero',
+        calendar: 'Calendario',
+        notes: 'Notas',
+        flashcards: 'Tarjetas de Memoria',
+        createDeck: 'Crear Mazo',
+        studyDeck: 'Estudiar Mazo'
     },
     en: {
         // Nav
@@ -92,7 +106,21 @@ export const translations = {
         hard: 'Hard (+100 XP)',
         uploadImage: 'Upload thumbnail',
         cancel: 'Cancel',
-        save: 'Save Task'
+        save: 'Save Task',
+        // Analytics & Settings
+        focusAnalytics: 'Focus Analytics',
+        past7Days: 'Past 7 Days',
+        minsTotal: 'Mins Total (All Time)',
+        aestheticEngine: 'Aesthetic Engine',
+        customPalette: 'Custom Palette',
+        avatarArmory: 'Avatar Armory',
+        // Views
+        board: 'Board',
+        calendar: 'Calendar',
+        notes: 'Notes',
+        flashcards: 'Flashcards',
+        createDeck: 'Create Deck',
+        studyDeck: 'Study Deck'
     }
 };
 

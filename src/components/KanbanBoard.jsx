@@ -251,13 +251,13 @@ export const KanbanBoard = () => {
                         onClick={() => setViewMode('board')}
                         className={`flex items-center gap-2 px-4 py-1.5 rounded-lg font-bold text-sm transition-all ${viewMode === 'board' ? 'bg-[var(--color-forge-800)] text-white shadow-sm' : 'text-gray-400 hover:text-white'}`}
                     >
-                        <Layout size={16} /> Board
+                        <Layout size={16} /> {t('board')}
                     </button>
                     <button
                         onClick={() => setViewMode('calendar')}
                         className={`flex items-center gap-2 px-4 py-1.5 rounded-lg font-bold text-sm transition-all ${viewMode === 'calendar' ? 'bg-[var(--color-forge-accent)] text-white shadow-[0_0_15px_rgba(255,83,73,0.3)] border border-transparent' : 'text-gray-400 hover:text-white'}`}
                     >
-                        <CalendarIcon size={16} /> Calendar
+                        <CalendarIcon size={16} /> {t('calendar')}
                     </button>
                 </div>
 
@@ -330,6 +330,7 @@ export const KanbanBoard = () => {
                             setEditingTask(task)
                             setIsModalOpen(true)
                         }}
+                        onDeleteTask={deleteTask}
                     />
                 )}
             </div>

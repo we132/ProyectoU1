@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react'
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Plus } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Plus, Trash2 } from 'lucide-react'
 
-export const CalendarView = ({ tasks, onOpenNewTask, onEditTask }) => {
+export const CalendarView = ({ tasks, onOpenNewTask, onEditTask, onDeleteTask }) => {
     const [currentDate, setCurrentDate] = useState(new Date())
 
     const currentMonth = currentDate.getMonth()
@@ -124,11 +124,29 @@ export const CalendarView = ({ tasks, onOpenNewTask, onEditTask }) => {
                                 {dayTasks.map(task => (
                                     <div
                                         key={task.id}
-                                        onClick={() => onEditTask(task)}
-                                        className={`text-[10px] font-bold truncate px-1.5 py-1 rounded cursor-pointer hover:scale-[1.02] transition-transform ${task.status === 'done' ? 'bg-forge-900/50 text-gray-500 line-through border border-forge-700/50' : 'bg-green-500/20 border border-green-500/30 text-green-300'}`}
+                                        className={`group/task relative flex items-center justify-between text-[10px] font-bold px-1.5 py-1 rounded cursor-pointer transition-transform ${task.status === 'done' ? 'bg-forge-900/50 text-gray-500 line-through border border-forge-700/50' : 'bg-green-500/20 border border-green-500/30 text-green-300'}`}
                                         title={task.title}
                                     >
-                                        {task.title}
+                                        <div
+                                            className="truncate flex-grow hover:scale-[1.02]"
+                                            onClick={() => onEditTask(task)}
+                                        >
+                                            {task.title}
+                                        </div>
+
+                                        {onDeleteTask && (
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    if (window.confirm('Delete this task?')) {
+                                                        onDeleteTask(task.id);
+                                                    }
+                                                }}
+                                                className="opacity-0 group-hover/task:opacity-100 p-0.5 text-red-400 hover:text-red-300 hover:bg-red-400/20 rounded ml-1 transition-all shrink-0"
+                                            >
+                                                <Trash2 size={12} />
+                                            </button>
+                                        )}
                                     </div>
                                 ))}
                             </div>

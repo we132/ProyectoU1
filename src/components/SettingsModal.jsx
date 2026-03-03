@@ -129,14 +129,14 @@ export const SettingsModal = ({ isOpen, onClose }) => {
                     <div className="mb-10">
                         <div className="flex items-center gap-3 mb-6">
                             <Activity className="text-[var(--color-forge-accent)]" size={24} />
-                            <h2 className="text-2xl font-bold text-[var(--color-text-main)]">Focus Analytics</h2>
+                            <h2 className="text-2xl font-bold text-[var(--color-text-main)]">{t('focusAnalytics')}</h2>
                         </div>
 
                         <div className="bg-forge-900 border border-forge-700 rounded-2xl p-6 shadow-inner">
                             <div className="flex justify-between items-center mb-6">
-                                <span className="text-sm font-bold text-gray-400">Past 7 Days</span>
+                                <span className="text-sm font-bold text-gray-400">{t('past7Days')}</span>
                                 <span className="text-xs font-bold text-forge-accent bg-forge-accent/10 border border-forge-accent/20 px-3 py-1.5 rounded-full shadow-neon">
-                                    {allTimeMins} Mins Total (All Time)
+                                    {allTimeMins} {t('minsTotal')}
                                 </span>
                             </div>
 
@@ -181,7 +181,7 @@ export const SettingsModal = ({ isOpen, onClose }) => {
                     <div className="mb-10">
                         <div className="flex items-center gap-3 mb-6">
                             <Settings className="text-[var(--color-forge-accent)]" size={24} />
-                            <h2 className="text-2xl font-bold text-[var(--color-text-main)]">Aesthetic Engine</h2>
+                            <h2 className="text-2xl font-bold text-[var(--color-text-main)]">{t('aestheticEngine')}</h2>
                         </div>
 
                         <p className="text-sm text-gray-400 mb-6">
@@ -236,7 +236,7 @@ export const SettingsModal = ({ isOpen, onClose }) => {
                                     </div>
                                     <div className="p-4 flex-grow flex flex-col justify-between">
                                         <h4 className="font-bold text-sm mb-2 text-white flex items-center gap-2">
-                                            <Palette size={16} /> Custom Palette
+                                            <Palette size={16} /> {t('customPalette')}
                                         </h4>
                                         <div className="flex items-center gap-3">
                                             <input
@@ -271,7 +271,7 @@ export const SettingsModal = ({ isOpen, onClose }) => {
                         <div className="flex items-center justify-between mb-6">
                             <div className="flex items-center gap-3">
                                 <ImageIcon className="text-[var(--color-forge-accent)]" size={24} />
-                                <h2 className="text-xl font-bold text-[var(--color-text-main)]">Avatar Armory</h2>
+                                <h2 className="text-xl font-bold text-[var(--color-text-main)]">{t('avatarArmory')}</h2>
                             </div>
 
                             {/* Pagination Controls */}
