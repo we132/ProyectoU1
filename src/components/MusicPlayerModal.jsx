@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { X, Play, Pause, Headphones, Music2, Upload, Loader2, Music, Trash2, SkipBack, SkipForward } from 'lucide-react';
 import { useGlobalAudio } from '../context/AudioContext';
 import { useMusic } from '../hooks/useMusic';
@@ -6,10 +6,54 @@ import { useMusic } from '../hooks/useMusic';
 export const MusicPlayerModal = ({ isOpen, onClose }) => {
     const {
         stations, activeStation, musicEnabled, playError,
-        currentTime, duration,
+        audioRef,
         toggleMusic, changeStation, forcePlay, setMusicEnabled,
         nextTrack, prevTrack, seekTo
     } = useGlobalAudio();
+
+    const [currentTime, setCurrentTime] = useState(0);
+    const [duration, setDuration] = useState(0);
+    const [isDragging, setIsDragging] = useState(false);
+
+    useEffect(() => {
+        const audio = audioRef?.current;
+        if (!audio) return;
+
+        const updateTime = () => {
+            // Only update time if the user is NOT actively dragging the scrubber
+            if (!isDragging) {
+                setCurrentTime(audio.currentTime);
+            }
+        };
+
+        const updateDuration = () => {
+            setDuration(audio.duration);
+        };
+
+        // Init values
+        setCurrentTime(audio.currentTime);
+        setDuration(audio.duration || 0);
+
+        audio.addEventListener('timeupdate', updateTime);
+        audio.addEventListener('loadedmetadata', updateDuration);
+        audio.addEventListener('durationchange', updateDuration);
+
+        return () => {
+            audio.removeEventListener('timeupdate', updateTime);
+            audio.removeEventListener('loadedmetadata', updateDuration);
+            audio.removeEventListener('durationchange', updateDuration);
+        };
+    }, [audioRef, isDragging]);
+
+    const handleSeekChange = (e) => {
+        setIsDragging(true);
+        setCurrentTime(Number(e.target.value));
+    };
+
+    const handleSeekCommit = (e) => {
+        seekTo(Number(e.target.value));
+        setIsDragging(false);
+    };
 
     const formatTime = (seconds) => {
         if (isNaN(seconds)) return "00:00";
@@ -56,16 +100,28 @@ export const MusicPlayerModal = ({ isOpen, onClose }) => {
                     {/* Timeline Scrubber */}
                     {musicEnabled && (
                         <div className="w-full flex items-center gap-3 text-xs text-gray-400 font-mono font-medium">
-                            <span>{formatTime(currentTime)}</span>
-                            <input
-                                type="range"
-                                min={0}
-                                max={duration || 100}
-                                value={currentTime || 0}
-                                onChange={(e) => seekTo(Number(e.target.value))}
-                                className="flex-grow h-1 bg-forge-700 rounded-full appearance-none outline-none cursor-pointer focus:outline-none accent-[var(--color-forge-accent)]"
-                            />
-                            <span>{formatTime(duration)}</span>
+                            <span className="w-10 text-right">{formatTime(currentTime)}</span>
+                            <div className="relative flex-grow h-6 flex items-center group">
+                                {/* Invisible larger touch target for mobile */}
+                                <input
+                                    type="range"
+                                    min={0}
+                                    max={duration || 100}
+                                    value={currentTime || 0}
+                                    onChange={handleSeekChange}
+                                    onMouseUp={handleSeekCommit}
+                                    onTouchEnd={handleSeekCommit}
+                                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                                />
+                                {/* Visible styled track */}
+                                <div className="w-full h-1.5 bg-forge-700 rounded-full overflow-hidden relative pointer-events-none">
+                                    <div
+                                        className="h-full bg-[var(--color-forge-accent)] transition-all ease-linear"
+                                        style={{ width: `${((currentTime || 0) / (duration || 100)) * 100}%`, transitionDuration: isDragging ? '0ms' : '250ms' }}
+                                    ></div>
+                                </div>
+                            </div>
+                            <span className="w-10 text-left">{formatTime(duration)}</span>
                         </div>
                     )}
 

@@ -25,8 +25,6 @@ export const AudioProvider = ({ children }) => {
     const [trackIndex, setTrackIndex] = useState(0);
     const [musicEnabled, setMusicEnabled] = useState(false);
     const [playError, setPlayError] = useState(false);
-    const [currentTime, setCurrentTime] = useState(0);
-    const [duration, setDuration] = useState(0);
 
     const audioRef = useRef(null);
 
@@ -139,7 +137,6 @@ export const AudioProvider = ({ children }) => {
     const seekTo = (amount) => {
         if (audioRef.current) {
             audioRef.current.currentTime = amount;
-            setCurrentTime(amount);
         }
     };
 
@@ -164,18 +161,6 @@ export const AudioProvider = ({ children }) => {
         }
     };
 
-    const handleTimeUpdate = () => {
-        if (audioRef.current) {
-            setCurrentTime(audioRef.current.currentTime);
-        }
-    };
-
-    const handleLoadedMetadata = () => {
-        if (audioRef.current) {
-            setDuration(audioRef.current.duration);
-        }
-    };
-
     // If user logs out, stop music
     useEffect(() => {
         if (!session) {
@@ -190,8 +175,7 @@ export const AudioProvider = ({ children }) => {
             trackIndex,
             musicEnabled,
             playError,
-            currentTime,
-            duration,
+            audioRef,
             toggleMusic,
             changeStation,
             forcePlay,
@@ -206,9 +190,6 @@ export const AudioProvider = ({ children }) => {
                 src={currentStreamUrl}
                 preload="auto"
                 onEnded={handleTrackEnd}
-                onTimeUpdate={handleTimeUpdate}
-                onLoadedMetadata={handleLoadedMetadata}
-                onDurationChange={handleLoadedMetadata}
                 onCanPlay={handleCanPlay}
                 loop={activeStation?.streamUrls?.length === 1}
             />
