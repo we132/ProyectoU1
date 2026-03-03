@@ -45,11 +45,27 @@ export const WorkspaceProvider = ({ children }) => {
             .insert([{ user_id: user.id, name, type, invite_code: inviteCode }])
             .select()
 
-        if (!error && data) {
-            setWorkspaces(prev => [...prev, data[0]])
-            return { data: data[0] }
+        if (error) {
+            console.error("Error creating workspace:", error);
+            alert(`Error creating workspace: ${error.message}`);
+            return { error }
         }
-        return { error }
+
+        const newWorkspace = data[0]
+
+        // Auto-join group workspaces as owner so relationships exist
+        if (type === 'group') {
+            const { error: memberError } = await supabase
+                .from('workspace_members')
+                .insert([{ workspace_id: newWorkspace.id, user_id: user.id, role: 'owner' }])
+
+            if (memberError) {
+                console.error("Error adding to members:", memberError)
+            }
+        }
+
+        setWorkspaces(prev => [...prev, newWorkspace])
+        return { data: newWorkspace }
     }
 
     const joinWorkspace = async (inviteCode) => {

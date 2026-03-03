@@ -4,7 +4,7 @@ import { useLanguage } from '../context/LanguageContext';
 import { Store, Coins, Sparkles, AlertCircle, Loader2 } from 'lucide-react';
 import { supabase } from '../services/supabase';
 
-const GACHA_PETS = [
+export const GACHA_PETS = [
     // Common (50%)
     { id: 'pet_doge', name: 'Doge', rarity: 'common', emoji: '🐕', color: 'bg-gray-400' },
     { id: 'pet_popcat', name: 'Pop Cat', rarity: 'common', emoji: '😺', color: 'bg-gray-400' },

@@ -20,6 +20,7 @@ import { TaskModal } from './TaskModal'
 import { TaskCard } from './TaskCard'
 import { LootboxModal } from './LootboxModal'
 import { CalendarView } from './CalendarView'
+import { PetPlaypen } from './PetPlaypen'
 
 // Simple helper to play a satisfying sound
 const playSuccessSound = () => {
@@ -241,6 +242,9 @@ export const KanbanBoard = () => {
                     <Plus size={18} />
                 </button>
             </div>
+
+            {/* PET PLAYPEN */}
+            <PetPlaypen />
 
             {/* VIEW MODE TOGGLE & ADD TASK */}
             <div className="flex items-center justify-between mb-6">
