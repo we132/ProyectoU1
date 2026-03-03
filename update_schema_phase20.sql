@@ -33,27 +33,27 @@ CREATE TABLE IF NOT EXISTS public.workspace_members (
 -- RLS for Workspace Members
 ALTER TABLE public.workspace_members ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Users can view their own memberships" ON public.workspace_members;
 CREATE POLICY "Users can view their own memberships"
     ON public.workspace_members FOR SELECT
     USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can join via membership" ON public.workspace_members;
 CREATE POLICY "Users can join via membership"
     ON public.workspace_members FOR INSERT
     WITH CHECK (auth.uid() = user_id);
 
-CREATE POLICY "Owners can manage memberships"
-    ON public.workspace_members FOR ALL
-    USING (
-        EXISTS (
-            SELECT 1 FROM public.workspace_members wm
-            WHERE wm.workspace_id = workspace_members.workspace_id
-            AND wm.user_id = auth.uid()
-            AND wm.role = 'owner'
-        )
-    );
+DROP POLICY IF EXISTS "Users can delete their own memberships" ON public.workspace_members;
+CREATE POLICY "Users can delete their own memberships"
+    ON public.workspace_members FOR DELETE
+    USING (auth.uid() = user_id);
+
+-- Drop the old recursive owners policy if it was already applied
+DROP POLICY IF EXISTS "Owners can manage memberships" ON public.workspace_members;
 
 -- Modify existing Workspaces RLS to allow members to query group workspaces
 DROP POLICY IF EXISTS "Users can view their own workspaces" ON public.workspaces;
+DROP POLICY IF EXISTS "Users can view workspaces they own or are members of" ON public.workspaces;
 CREATE POLICY "Users can view workspaces they own or are members of"
     ON public.workspaces FOR SELECT
     USING (
@@ -83,6 +83,7 @@ ALTER TABLE public.flashcard_decks ADD COLUMN IF NOT EXISTS workspace_id uuid RE
 -- carry a user_id of the person who created it, but are selectable by anyone in workspace_members.
 -- Let's patch Tasks RLS:
 DROP POLICY IF EXISTS "Users can view their own tasks" ON public.tasks;
+DROP POLICY IF EXISTS "Users can view tasks in their workspaces" ON public.tasks;
 CREATE POLICY "Users can view tasks in their workspaces"
     ON public.tasks FOR SELECT
     USING (
