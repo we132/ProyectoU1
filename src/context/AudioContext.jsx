@@ -25,6 +25,8 @@ export const AudioProvider = ({ children }) => {
     const [trackIndex, setTrackIndex] = useState(0);
     const [musicEnabled, setMusicEnabled] = useState(false);
     const [playError, setPlayError] = useState(false);
+    const [currentTime, setCurrentTime] = useState(0);
+    const [duration, setDuration] = useState(0);
 
     const audioRef = useRef(null);
 
@@ -97,8 +99,24 @@ export const AudioProvider = ({ children }) => {
         }
     };
 
-    const toggleMusic = () => {
-        setMusicEnabled(!musicEnabled);
+    // Navigation Controls
+    const nextTrack = () => {
+        if (!activeStation?.streamUrls?.length) return;
+        setTrackIndex((prev) => (prev + 1) % activeStation.streamUrls.length);
+        if (!musicEnabled) setMusicEnabled(true);
+    };
+
+    const prevTrack = () => {
+        if (!activeStation?.streamUrls?.length) return;
+        setTrackIndex((prev) => (prev - 1 + activeStation.streamUrls.length) % activeStation.streamUrls.length);
+        if (!musicEnabled) setMusicEnabled(true);
+    };
+
+    const seekTo = (amount) => {
+        if (audioRef.current && duration > 0) {
+            audioRef.current.currentTime = amount;
+            setCurrentTime(amount);
+        }
     };
 
     const changeStation = (station) => {
@@ -106,6 +124,19 @@ export const AudioProvider = ({ children }) => {
         setTrackIndex(0);
         if (!musicEnabled) {
             setMusicEnabled(true);
+        }
+    };
+
+    // Event Handlers for Native Audio
+    const handleTimeUpdate = () => {
+        if (audioRef.current) {
+            setCurrentTime(audioRef.current.currentTime);
+        }
+    };
+
+    const handleLoadedMetadata = () => {
+        if (audioRef.current) {
+            setDuration(audioRef.current.duration);
         }
     };
 
@@ -123,10 +154,15 @@ export const AudioProvider = ({ children }) => {
             trackIndex,
             musicEnabled,
             playError,
+            currentTime,
+            duration,
             toggleMusic,
             changeStation,
             forcePlay,
-            setMusicEnabled
+            setMusicEnabled,
+            nextTrack,
+            prevTrack,
+            seekTo
         }}>
             {/* The global hidden audio element */}
             <audio
@@ -134,6 +170,8 @@ export const AudioProvider = ({ children }) => {
                 src={currentStreamUrl}
                 preload="auto"
                 onEnded={handleTrackEnd}
+                onTimeUpdate={handleTimeUpdate}
+                onLoadedMetadata={handleLoadedMetadata}
                 loop={activeStation?.streamUrls?.length === 1}
             />
             {children}

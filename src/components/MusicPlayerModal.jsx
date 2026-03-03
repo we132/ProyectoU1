@@ -1,13 +1,22 @@
 import { useState, useRef } from 'react';
-import { X, Play, Pause, Headphones, Music2, Upload, Loader2, Music, Trash2 } from 'lucide-react';
+import { X, Play, Pause, Headphones, Music2, Upload, Loader2, Music, Trash2, SkipBack, SkipForward } from 'lucide-react';
 import { useGlobalAudio } from '../context/AudioContext';
 import { useMusic } from '../hooks/useMusic';
 
 export const MusicPlayerModal = ({ isOpen, onClose }) => {
     const {
         stations, activeStation, musicEnabled, playError,
-        toggleMusic, changeStation, forcePlay, setMusicEnabled
+        currentTime, duration,
+        toggleMusic, changeStation, forcePlay, setMusicEnabled,
+        nextTrack, prevTrack, seekTo
     } = useGlobalAudio();
+
+    const formatTime = (seconds) => {
+        if (isNaN(seconds)) return "00:00";
+        const mins = Math.floor(seconds / 60);
+        const secs = Math.floor(seconds % 60);
+        return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    };
 
     const { tracks, uploadTrack, deleteTrack, loading: musicLoading } = useMusic();
     const [isUploadingTrack, setIsUploadingTrack] = useState(false);
@@ -36,19 +45,56 @@ export const MusicPlayerModal = ({ isOpen, onClose }) => {
                 </div>
 
                 {/* Main Playback Control */}
-                <div className="flex flex-col items-center gap-6 mb-8 py-6 bg-forge-900/50 rounded-2xl border border-forge-700/50">
-                    <button
-                        onClick={toggleMusic}
-                        className={`p-6 rounded-full border transition-all hover:scale-105 ${musicEnabled ? 'bg-forge-xp text-forge-900 border-forge-xp shadow-neon-xp' : 'bg-forge-900 text-gray-400 border-forge-700 hover:text-white hover:border-white'}`}
-                        title="Toggle Global Audio"
-                    >
-                        {musicEnabled ? <Pause size={32} fill="currentColor" /> : <Play size={32} fill="currentColor" className="ml-1" />}
-                    </button>
+                <div className="flex flex-col items-center gap-6 mb-8 py-6 bg-forge-900/50 rounded-2xl border border-forge-700/50 w-full px-6">
 
+                    {/* Track Title */}
                     <p className="text-sm font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
                         <Music2 size={16} className={musicEnabled ? 'text-forge-xp animate-pulse' : ''} />
                         {musicEnabled ? "PLAYING: " + activeStation.name : "RADIO OFF"}
                     </p>
+
+                    {/* Timeline Scrubber */}
+                    {musicEnabled && (
+                        <div className="w-full flex items-center gap-3 text-xs text-gray-400 font-mono font-medium">
+                            <span>{formatTime(currentTime)}</span>
+                            <input
+                                type="range"
+                                min={0}
+                                max={duration || 100}
+                                value={currentTime || 0}
+                                onChange={(e) => seekTo(Number(e.target.value))}
+                                className="flex-grow h-1 bg-forge-700 rounded-full appearance-none outline-none cursor-pointer focus:outline-none accent-[var(--color-forge-accent)]"
+                            />
+                            <span>{formatTime(duration)}</span>
+                        </div>
+                    )}
+
+                    {/* Playback Buttons */}
+                    <div className="flex items-center gap-4">
+                        <button
+                            onClick={prevTrack}
+                            className="p-3 rounded-full text-gray-400 hover:text-white transition-colors"
+                            title="Previous Track"
+                        >
+                            <SkipBack size={24} fill="currentColor" />
+                        </button>
+
+                        <button
+                            onClick={toggleMusic}
+                            className={`p-6 rounded-full border transition-all hover:scale-105 ${musicEnabled ? 'bg-forge-xp text-forge-900 border-forge-xp shadow-neon-xp' : 'bg-forge-900 text-gray-400 border-forge-700 hover:text-white hover:border-white'}`}
+                            title="Toggle Global Audio"
+                        >
+                            {musicEnabled ? <Pause size={32} fill="currentColor" /> : <Play size={32} fill="currentColor" className="ml-1" />}
+                        </button>
+
+                        <button
+                            onClick={nextTrack}
+                            className="p-3 rounded-full text-gray-400 hover:text-white transition-colors"
+                            title="Next Track"
+                        >
+                            <SkipForward size={24} fill="currentColor" />
+                        </button>
+                    </div>
 
                     {playError && (
                         <div className="mt-2 bg-forge-danger/20 border border-forge-danger text-forge-danger px-4 py-2 rounded-xl text-center flex flex-col items-center gap-2 animate-in fade-in slide-in-from-bottom-2">
