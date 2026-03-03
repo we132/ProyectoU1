@@ -28,7 +28,7 @@ export const TaskCard = ({ task, onDelete, onEdit }) => {
 
         if (diffDays < 0) return { text: formattedDate, style: 'text-red-400 bg-red-400/10 border-red-400/20' }
         if (diffDays === 0) return { text: 'Today', style: 'text-yellow-400 bg-yellow-400/10 border-yellow-400/20' }
-        return { text: formattedDate, style: 'text-blue-400 bg-blue-400/10 border-blue-400/20' }
+        return { text: formattedDate, style: 'text-green-400 bg-green-400/10 border-green-400/20' }
     }
 
     const dueDateBadge = getDueDateBadge(task.due_date)

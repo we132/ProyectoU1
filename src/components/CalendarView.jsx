@@ -125,7 +125,7 @@ export const CalendarView = ({ tasks, onOpenNewTask, onEditTask }) => {
                                     <div
                                         key={task.id}
                                         onClick={() => onEditTask(task)}
-                                        className={`text-[10px] font-bold truncate px-1.5 py-1 rounded cursor-pointer hover:scale-[1.02] transition-transform ${task.status === 'done' ? 'bg-green-500/20 text-green-300 line-through' : 'bg-[var(--color-forge-800)] border border-forge-700 text-gray-300'}`}
+                                        className={`text-[10px] font-bold truncate px-1.5 py-1 rounded cursor-pointer hover:scale-[1.02] transition-transform ${task.status === 'done' ? 'bg-forge-900/50 text-gray-500 line-through border border-forge-700/50' : 'bg-green-500/20 border border-green-500/30 text-green-300'}`}
                                         title={task.title}
                                     >
                                         {task.title}
