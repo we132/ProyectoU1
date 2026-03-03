@@ -114,9 +114,11 @@ export const AudioProvider = ({ children }) => {
 
     const nextTrack = () => {
         if (!activeStation?.streamUrls?.length) return;
-        setTrackIndex((prev) => (prev + 1) % activeStation.streamUrls.length);
+        const nextIndex = (trackIndex + 1) % activeStation.streamUrls.length;
+        setTrackIndex(nextIndex);
         if (!musicEnabled) setMusicEnabled(true);
         if (audioRef.current) {
+            audioRef.current.src = activeStation.streamUrls[nextIndex] || '';
             const p = audioRef.current.play();
             if (p !== undefined) p.catch(() => { });
         }
@@ -124,16 +126,18 @@ export const AudioProvider = ({ children }) => {
 
     const prevTrack = () => {
         if (!activeStation?.streamUrls?.length) return;
-        setTrackIndex((prev) => (prev - 1 + activeStation.streamUrls.length) % activeStation.streamUrls.length);
+        const prevIndex = (trackIndex - 1 + activeStation.streamUrls.length) % activeStation.streamUrls.length;
+        setTrackIndex(prevIndex);
         if (!musicEnabled) setMusicEnabled(true);
         if (audioRef.current) {
+            audioRef.current.src = activeStation.streamUrls[prevIndex] || '';
             const p = audioRef.current.play();
             if (p !== undefined) p.catch(() => { });
         }
     };
 
     const seekTo = (amount) => {
-        if (audioRef.current && duration > 0) {
+        if (audioRef.current) {
             audioRef.current.currentTime = amount;
             setCurrentTime(amount);
         }
@@ -144,6 +148,11 @@ export const AudioProvider = ({ children }) => {
         setTrackIndex(0);
         if (!musicEnabled) {
             setMusicEnabled(true);
+        }
+        if (audioRef.current) {
+            audioRef.current.src = station.streamUrls[0] || '';
+            const p = audioRef.current.play();
+            if (p !== undefined) p.catch(() => { });
         }
     };
 
@@ -199,6 +208,7 @@ export const AudioProvider = ({ children }) => {
                 onEnded={handleTrackEnd}
                 onTimeUpdate={handleTimeUpdate}
                 onLoadedMetadata={handleLoadedMetadata}
+                onDurationChange={handleLoadedMetadata}
                 onCanPlay={handleCanPlay}
                 loop={activeStation?.streamUrls?.length === 1}
             />
