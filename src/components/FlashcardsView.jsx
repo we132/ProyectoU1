@@ -2,13 +2,15 @@ import { useState, useEffect } from 'react';
 import { useFlashcards } from '../hooks/useFlashcards';
 import { useLanguage } from '../context/LanguageContext';
 import { useTheme } from '../context/ThemeContext';
+import { useWorkspaceContext } from '../context/WorkspaceContext';
 import { Plus, Trash2, BookOpen, ChevronRight, X, Play } from 'lucide-react';
 import { DeckView } from './DeckView';
 
 export const FlashcardsView = () => {
     const { t } = useLanguage();
     const { applyTheme, currentTheme } = useTheme();
-    const { decks, loadingDecks, fetchDecks, createDeck, deleteDeck } = useFlashcards();
+    const { activeWorkspaceId } = useWorkspaceContext();
+    const { decks, loadingDecks, fetchDecks, createDeck, deleteDeck } = useFlashcards(activeWorkspaceId);
     const [isCreating, setIsCreating] = useState(false);
     const [newTitle, setNewTitle] = useState('');
     const [newDesc, setNewDesc] = useState('');

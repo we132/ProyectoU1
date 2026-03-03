@@ -5,6 +5,7 @@ import { AuthProvider, useAuth } from './context/AuthContext'
 import { LanguageProvider, useLanguage } from './context/LanguageContext'
 import { ThemeProvider, useTheme } from './context/ThemeContext'
 import { AudioProvider } from './context/AudioContext'
+import { WorkspaceProvider } from './context/WorkspaceContext'
 import { AuthUI } from './components/AuthUI'
 import { KanbanBoard } from './components/KanbanBoard'
 import { SettingsModal } from './components/SettingsModal'
@@ -12,8 +13,9 @@ import { FocusMode } from './components/FocusMode'
 import { MusicPlayerModal } from './components/MusicPlayerModal'
 import { NotesView } from './components/NotesView'
 import { FlashcardsView } from './components/FlashcardsView'
+import { StoreView } from './components/StoreView'
 import { useProfile } from './hooks/useProfile'
-import { BookOpen } from 'lucide-react'
+import { BookOpen, Store, Coins } from 'lucide-react'
 
 // Protected Route Wrapper Component
 const ProtectedRoute = ({ children }) => {
@@ -75,6 +77,13 @@ function GlobalNav() {
                 <BookOpen size={16} className={location.pathname === '/flashcards' ? 'text-forge-accent' : ''} />
                 {t('flashcards')}
               </Link>
+              <Link
+                to="/store"
+                className={`px-4 py-2 rounded-full text-sm font-bold flex items-center gap-2 transition-all ${location.pathname === '/store' ? 'bg-forge-800 text-[var(--color-text-main)] shadow-sm border border-forge-700' : 'text-gray-400 hover:text-[var(--color-text-main)] hover:bg-forge-800/50'}`}
+              >
+                <Store size={16} className={location.pathname === '/store' ? 'text-forge-accent' : ''} />
+                Armory
+              </Link>
             </div>
           )}
         </div>
@@ -98,6 +107,11 @@ function GlobalNav() {
               <div className="bg-forge-800 border border-forge-700 px-3 py-1 rounded-full flex items-center gap-2 shadow-sm transition-colors duration-500">
                 <span className="text-xs text-gray-400 font-medium">{t('lvl')}</span>
                 <span className="text-sm text-forge-xp font-bold">{currentLevel}</span>
+              </div>
+
+              <div className="bg-forge-800 border border-yellow-500/30 px-3 py-1 rounded-full flex items-center gap-1.5 shadow-sm transition-colors duration-500 cursor-help" title="Task Coins">
+                <Coins size={14} className="text-yellow-400" />
+                <span className="text-sm text-yellow-400 font-bold">{profile?.coins || 0}</span>
               </div>
 
               {/* Music Player Button */}
@@ -161,6 +175,14 @@ function BottomNav({ onOpenMusic }) {
         </Link>
 
         <div className="w-[1px] h-8 bg-forge-700/50"></div>
+
+        <Link
+          to="/store"
+          className={`flex flex-col items-center justify-center p-2 rounded-xl transition-all w-1/5 ${location.pathname === '/store' ? 'text-forge-accent' : 'text-gray-500 hover:text-gray-300'}`}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mb-1"><path d="m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7" /><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" /><path d="M15 22v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4" /><path d="M2 7h20" /><path d="M22 7v3a2 2 0 0 1-2 2v0a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 16 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 12 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 8 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 4 12v0a2 2 0 0 1-2-2V7" /></svg>
+          <span className="text-[10px] uppercase font-bold tracking-widest text-center truncate w-full">Store</span>
+        </Link>
 
         <button
           onClick={onOpenMusic}
@@ -235,6 +257,14 @@ function AppContent() {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/store"
+            element={
+              <ProtectedRoute>
+                <StoreView />
+              </ProtectedRoute>
+            }
+          />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
@@ -248,11 +278,13 @@ function App() {
   return (
     <LanguageProvider>
       <AuthProvider>
-        <AudioProvider>
-          <ThemeProvider>
-            <AppContent />
-          </ThemeProvider>
-        </AudioProvider>
+        <WorkspaceProvider>
+          <AudioProvider>
+            <ThemeProvider>
+              <AppContent />
+            </ThemeProvider>
+          </AudioProvider>
+        </WorkspaceProvider>
       </AuthProvider>
     </LanguageProvider>
   )

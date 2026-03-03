@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../services/supabase'
 import { useAuth } from '../context/AuthContext'
 
-export const useNotes = () => {
+export const useNotes = (workspaceId) => {
     const { user } = useAuth()
 
     const [folders, setFolders] = useState([])
@@ -16,11 +16,19 @@ export const useNotes = () => {
         if (!user) return
         setLoadingFolders(true)
 
-        const { data, error } = await supabase
+        let query = supabase
             .from('folders')
             .select('*')
             .eq('user_id', user.id)
             .order('created_at', { ascending: true })
+
+        if (workspaceId) {
+            query = query.eq('workspace_id', workspaceId)
+        } else {
+            query = query.is('workspace_id', null)
+        }
+
+        const { data, error } = await query
 
         if (error) {
             console.error('Error fetching folders:', error)
@@ -35,7 +43,7 @@ export const useNotes = () => {
 
         const { data, error } = await supabase
             .from('folders')
-            .insert([{ user_id: user.id, name }])
+            .insert([{ user_id: user.id, workspace_id: workspaceId || null, name }])
             .select()
 
         if (!error && data) {
@@ -78,11 +86,19 @@ export const useNotes = () => {
         if (!user) return
         setLoadingNotes(true)
 
-        const { data, error } = await supabase
+        let query = supabase
             .from('notes')
             .select('*')
             .eq('user_id', user.id)
             .order('created_at', { ascending: false })
+
+        if (workspaceId) {
+            query = query.eq('workspace_id', workspaceId)
+        } else {
+            query = query.is('workspace_id', null)
+        }
+
+        const { data, error } = await query
 
         if (error) {
             console.error('Error fetching notes:', error)
@@ -105,6 +121,7 @@ export const useNotes = () => {
             .from('notes')
             .insert([{
                 user_id: user.id,
+                workspace_id: workspaceId || null,
                 folder_id: folderId,
                 title: 'Untitled Note',
                 content: ''

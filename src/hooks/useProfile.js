@@ -57,6 +57,32 @@ export const useProfile = () => {
         return { data: data[0], levelledUp: hasLevelledUp, newLevel }
     }
 
+    const addCoins = async (amount) => {
+        if (!profile) return
+
+        const newCoinsTotal = (profile.coins || 0) + amount
+
+        // Update local optimistic state first for fast UI feedback
+        const updatedProfile = { ...profile, coins: newCoinsTotal }
+        setProfile(updatedProfile)
+
+        // Sync with Database
+        const { data, error } = await supabase
+            .from('profiles')
+            .update({ coins: newCoinsTotal })
+            .eq('id', user.id)
+            .select()
+
+        if (error) {
+            console.error('Error adding Coins:', error)
+            // Rollback on fail
+            setProfile(profile)
+            return { error }
+        }
+
+        return { data: data[0] }
+    }
+
     const uploadAvatar = async (file) => {
         if (!user || !profile) return { error: new Error('Not authenticated') }
 
@@ -95,6 +121,7 @@ export const useProfile = () => {
         profile,
         loading,
         addXP,
+        addCoins,
         updateAvatar,
         uploadAvatar,
         refreshProfile: fetchProfile

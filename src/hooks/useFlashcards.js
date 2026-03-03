@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react';
 import { supabase } from '../services/supabase';
 import { useAuth } from '../context/AuthContext';
 
-export const useFlashcards = () => {
+export const useFlashcards = (workspaceId) => {
     const { user } = useAuth();
     const [decks, setDecks] = useState([]);
     const [cards, setCards] = useState([]);
@@ -14,10 +14,19 @@ export const useFlashcards = () => {
         if (!user) return;
         setLoadingDecks(true);
         try {
-            const { data, error } = await supabase
+            let query = supabase
                 .from('flashcard_decks')
                 .select('*')
+                .eq('user_id', user.id)
                 .order('created_at', { ascending: false });
+
+            if (workspaceId) {
+                query = query.eq('workspace_id', workspaceId)
+            } else {
+                query = query.is('workspace_id', null)
+            }
+
+            const { data, error } = await query;
 
             if (error) throw error;
             setDecks(data);
@@ -56,7 +65,7 @@ export const useFlashcards = () => {
         try {
             const { data, error } = await supabase
                 .from('flashcard_decks')
-                .insert([{ user_id: user.id, title: title.trim(), description: description?.trim() }])
+                .insert([{ user_id: user.id, workspace_id: workspaceId || null, title: title.trim(), description: description?.trim() }])
                 .select()
                 .single();
 

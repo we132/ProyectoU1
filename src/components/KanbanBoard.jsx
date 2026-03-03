@@ -10,10 +10,10 @@ import {
 } from '@dnd-kit/core'
 import { sortableKeyboardCoordinates, SortableContext, rectSortingStrategy, useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { CheckCircle2, Clock, ListTodo, Loader2, Plus, X, Layout, Calendar as CalendarIcon } from 'lucide-react'
+import { CheckCircle2, Clock, ListTodo, Loader2, Plus, X, Layout, Calendar as CalendarIcon, Users, Key, Briefcase } from 'lucide-react'
 
 import { useTasks } from '../hooks/useTasks'
-import { useWorkspaces } from '../hooks/useWorkspaces'
+import { useWorkspaceContext } from '../context/WorkspaceContext'
 import { useProfile } from '../hooks/useProfile'
 import { useLanguage } from '../context/LanguageContext'
 import { TaskModal } from './TaskModal'
@@ -86,15 +86,15 @@ export const KanbanBoard = () => {
     const { t } = useLanguage()
 
     // Workspace State
-    const [activeWorkspaceId, setActiveWorkspaceId] = useState(null)
-    const [isCreatingWorkspace, setIsCreatingWorkspace] = useState(false)
-    const [newWorkspaceName, setNewWorkspaceName] = useState('')
+    const { workspaces, createWorkspace, deleteWorkspace, joinWorkspace, activeWorkspaceId, setActiveWorkspaceId } = useWorkspaceContext()
+    const [showWorkspaceModal, setShowWorkspaceModal] = useState(false)
+    const [wsActionType, setWsActionType] = useState('personal') // 'personal' | 'group' | 'join'
+    const [workspaceInput, setWorkspaceInput] = useState('')
     const [viewMode, setViewMode] = useState('board') // 'board' | 'calendar'
 
-    const { workspaces, createWorkspace, deleteWorkspace } = useWorkspaces()
     const { tasks, loading, addTask, editTask, updateTaskStatus, deleteTask } = useTasks(activeWorkspaceId)
 
-    const { addXP, updateAvatar } = useProfile()
+    const { addXP, addCoins } = useProfile()
 
     const [activeTask, setActiveTask] = useState(null)
     const [localTasks, setLocalTasks] = useState(tasks)
@@ -107,12 +107,18 @@ export const KanbanBoard = () => {
     const [isModalOpen, setIsModalOpen] = useState(false)
     const [editingTask, setEditingTask] = useState(null)
 
-    const handleCreateWorkspace = async (e) => {
-        if (e.key === 'Enter') {
-            await createWorkspace(newWorkspaceName)
-            setNewWorkspaceName('')
-            setIsCreatingWorkspace(false)
+    const handleWorkspaceSubmit = async (e) => {
+        e.preventDefault()
+        if (!workspaceInput.trim()) return
+
+        if (wsActionType === 'join') {
+            await joinWorkspace(workspaceInput)
+        } else {
+            await createWorkspace(workspaceInput, wsActionType)
         }
+
+        setWorkspaceInput('')
+        setShowWorkspaceModal(false)
     }
 
     useEffect(() => {
@@ -167,10 +173,17 @@ export const KanbanBoard = () => {
             // DB Sync
             await updateTaskStatus(taskId, finalTargetStatus)
 
-            // XP & Sound Logic
+            // XP, Coins & Sound Logic
             if (finalTargetStatus === 'done' && originalTask.status !== 'done') {
                 const reward = originalTask.xp_reward || 10
+
+                // Coin Economy Matrix
+                let coinReward = 10;
+                if (originalTask.difficulty === 'medium') coinReward = 25;
+                if (originalTask.difficulty === 'hard') coinReward = 50;
+
                 const result = await addXP(reward)
+                await addCoins(coinReward)
                 playSuccessSound() // Ding!
 
                 // Trigger Lootbox Drop
@@ -224,24 +237,9 @@ export const KanbanBoard = () => {
                     </div>
                 ))}
 
-                {isCreatingWorkspace ? (
-                    <div className="flex items-center gap-2 bg-[var(--color-forge-800)] border border-[var(--color-forge-accent)] rounded-full px-3 py-1.5 animate-in fade-in slide-in-from-left-2">
-                        <input
-                            autoFocus
-                            type="text"
-                            value={newWorkspaceName}
-                            onChange={e => setNewWorkspaceName(e.target.value)}
-                            onKeyDown={handleCreateWorkspace}
-                            className="bg-transparent outline-none text-white w-24 text-sm font-bold placeholder-gray-500"
-                            placeholder="Name..."
-                        />
-                        <button onClick={() => setIsCreatingWorkspace(false)} className="text-gray-400 hover:text-[var(--color-forge-danger)]"><X size={16} /></button>
-                    </div>
-                ) : (
-                    <button onClick={() => setIsCreatingWorkspace(true)} className="p-2 border border-dashed border-gray-600 text-gray-400 hover:border-white hover:text-white rounded-full transition-colors flex items-center justify-center flex-shrink-0" title="New Workspace">
-                        <Plus size={18} />
-                    </button>
-                )}
+                <button onClick={() => setShowWorkspaceModal(true)} className="p-2 border border-dashed border-gray-600 text-gray-400 hover:border-white hover:text-white rounded-full transition-colors flex items-center justify-center flex-shrink-0" title="Manage Workspaces">
+                    <Plus size={18} />
+                </button>
             </div>
 
             {/* VIEW MODE TOGGLE & ADD TASK */}
@@ -272,6 +270,54 @@ export const KanbanBoard = () => {
                     <span className="hidden sm:inline-block">{t('createTask')}</span>
                 </button>
             </div>
+
+            {/* Workspace Modal */}
+            {showWorkspaceModal && (
+                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+                    <div className="bg-[var(--color-forge-800)] border border-[var(--color-forge-700)] w-full max-w-sm rounded-2xl p-6 shadow-2xl relative animate-in fade-in zoom-in-95 duration-200">
+                        <button onClick={() => setShowWorkspaceModal(false)} className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors">
+                            <X size={20} />
+                        </button>
+
+                        <h3 className="text-xl font-bold mb-4 text-white">Workspaces</h3>
+
+                        <div className="grid grid-cols-3 gap-2 mb-6">
+                            <button onClick={() => { setWsActionType('personal'); setWorkspaceInput(''); }} className={`flex flex-col items-center gap-1 p-3 rounded-lg border transition-colors ${wsActionType === 'personal' ? 'bg-forge-accent/10 border-forge-accent text-forge-accent' : 'bg-forge-900 border-forge-700 text-gray-400 hover:border-gray-500'}`}>
+                                <Briefcase size={18} />
+                                <span className="text-[10px] font-bold uppercase truncate">Personal</span>
+                            </button>
+                            <button onClick={() => { setWsActionType('group'); setWorkspaceInput(''); }} className={`flex flex-col items-center gap-1 p-3 rounded-lg border transition-colors ${wsActionType === 'group' ? 'bg-forge-accent/10 border-forge-accent text-forge-accent' : 'bg-forge-900 border-forge-700 text-gray-400 hover:border-gray-500'}`}>
+                                <Users size={18} />
+                                <span className="text-[10px] font-bold uppercase truncate">Group</span>
+                            </button>
+                            <button onClick={() => { setWsActionType('join'); setWorkspaceInput(''); }} className={`flex flex-col items-center gap-1 p-3 rounded-lg border transition-colors ${wsActionType === 'join' ? 'bg-forge-accent/10 border-forge-accent text-forge-accent' : 'bg-forge-900 border-forge-700 text-gray-400 hover:border-gray-500'}`}>
+                                <Key size={18} />
+                                <span className="text-[10px] font-bold uppercase truncate">Join</span>
+                            </button>
+                        </div>
+
+                        <form onSubmit={handleWorkspaceSubmit} className="flex flex-col gap-4">
+                            <div>
+                                <label className="block text-xs font-bold text-gray-400 uppercase mb-2">
+                                    {wsActionType === 'join' ? 'Invite Code' : 'Workspace Name'}
+                                </label>
+                                <input
+                                    autoFocus
+                                    type="text"
+                                    required
+                                    value={workspaceInput}
+                                    onChange={e => setWorkspaceInput(e.target.value)}
+                                    placeholder={wsActionType === 'join' ? "e.g. A1B2C3" : "e.g. University"}
+                                    className="w-full bg-[var(--color-forge-900)] border border-[var(--color-forge-700)] rounded-lg px-4 py-3 text-white focus:outline-none focus:border-[var(--color-forge-accent)] transition-colors"
+                                />
+                            </div>
+                            <button type="submit" className="w-full bg-[var(--color-forge-accent)] text-white hover:bg-[var(--color-forge-accent-hover)] font-bold py-3 rounded-lg transition-colors">
+                                {wsActionType === 'join' ? 'Join Team' : 'Create Workspace'}
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            )}
 
             {/* 1. Rich Task Creation Modal Launcher */}
             <TaskModal

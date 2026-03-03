@@ -3,14 +3,16 @@ import { PlusCircle, Trash2, Folder, FolderPlus, FileText, Image as ImageIcon, L
 import { useNotes } from '../hooks/useNotes'
 import { NoteEditor } from './NoteEditor'
 import { useLanguage } from '../context/LanguageContext'
+import { useWorkspaceContext } from '../context/WorkspaceContext'
 
 export const NotesView = () => {
     const { t } = useLanguage()
+    const { activeWorkspaceId } = useWorkspaceContext()
     const {
         folders, notes, loadingFolders, loadingNotes,
         createFolder, updateFolder, deleteFolder,
         createEmptyNote, updateNoteText, attachSketchToNote, deleteNote
-    } = useNotes()
+    } = useNotes(activeWorkspaceId)
 
     const [activeFolderId, setActiveFolderId] = useState(null)
     const [activeNote, setActiveNote] = useState(null)
