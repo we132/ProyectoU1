@@ -10,6 +10,7 @@ export const TaskModal = ({ onSaveTask, initialData = null, isOpen, onClose, onO
     const [title, setTitle] = useState('')
     const [description, setDescription] = useState('')
     const [difficulty, setDifficulty] = useState('medium')
+    const [dueDate, setDueDate] = useState('')
     const [imageFile, setImageFile] = useState(null)
     const [cropImageSrc, setCropImageSrc] = useState(null)
 
@@ -22,10 +23,12 @@ export const TaskModal = ({ onSaveTask, initialData = null, isOpen, onClose, onO
                 setTitle(initialData.title || '')
                 setDescription(initialData.description || '')
                 setDifficulty(initialData.difficulty || 'medium')
+                setDueDate(initialData.due_date ? initialData.due_date.split('T')[0] : '')
             } else {
                 setTitle('')
                 setDescription('')
                 setDifficulty('medium')
+                setDueDate('')
             }
             setImageFile(null)
             setCropImageSrc(null)
@@ -40,10 +43,10 @@ export const TaskModal = ({ onSaveTask, initialData = null, isOpen, onClose, onO
 
         if (initialData) {
             // Editing
-            await onSaveTask(initialData.id, { title, description, difficulty, imageFile, image_url: initialData.image_url })
+            await onSaveTask(initialData.id, { title, description, difficulty, due_date: dueDate || null, imageFile, image_url: initialData.image_url })
         } else {
             // Creating
-            await onSaveTask(title, description, difficulty, imageFile)
+            await onSaveTask(title, description, difficulty, dueDate || null, imageFile)
         }
 
         setLoading(false)
@@ -137,6 +140,17 @@ export const TaskModal = ({ onSaveTask, initialData = null, isOpen, onClose, onO
                                 </div>
 
                                 <div>
+                                    <label className="block text-sm font-medium text-gray-300 mb-1.5">Due Date</label>
+                                    <input
+                                        type="date"
+                                        value={dueDate}
+                                        onChange={e => setDueDate(e.target.value)}
+                                        className="w-full bg-[var(--color-forge-900)] border border-[var(--color-forge-700)] rounded-lg px-4 py-3 text-[var(--color-text-main)] focus:outline-none focus:border-[var(--color-forge-accent)] transition-colors"
+                                        disabled={loading}
+                                    />
+                                </div>
+
+                                <div className="sm:col-span-2">
                                     <label className="block text-sm font-medium text-gray-300 mb-1.5">{t('uploadImage')}</label>
                                     <div
                                         onClick={() => fileInputRef.current?.click()}

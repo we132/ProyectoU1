@@ -55,7 +55,7 @@ export const useTasks = (activeWorkspaceId = null) => {
     }, [user, fetchTasks])
 
     // New Add Task with Image Upload and Description
-    const addTask = async (title, description, difficulty, imageFile) => {
+    const addTask = async (title, description, difficulty, dueDate, imageFile) => {
         if (!user) return
 
         let uploadedImageUrl = null
@@ -91,6 +91,7 @@ export const useTasks = (activeWorkspaceId = null) => {
             title,
             description: description || null,
             difficulty,
+            due_date: dueDate || null,
             xp_reward: xpMap[difficulty] || 10,
             status: 'todo',
             image_url: uploadedImageUrl,
@@ -138,6 +139,7 @@ export const useTasks = (activeWorkspaceId = null) => {
             title: updates.title,
             description: updates.description || null,
             difficulty: updates.difficulty,
+            due_date: updates.due_date !== undefined ? updates.due_date : null
         }
 
         // XP mapping in case difficulty changed

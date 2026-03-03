@@ -10,7 +10,7 @@ import {
 } from '@dnd-kit/core'
 import { sortableKeyboardCoordinates, SortableContext, rectSortingStrategy, useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { CheckCircle2, Clock, ListTodo, Loader2, Plus, X } from 'lucide-react'
+import { CheckCircle2, Clock, ListTodo, Loader2, Plus, X, Layout, Calendar as CalendarIcon } from 'lucide-react'
 
 import { useTasks } from '../hooks/useTasks'
 import { useWorkspaces } from '../hooks/useWorkspaces'
@@ -19,6 +19,7 @@ import { useLanguage } from '../context/LanguageContext'
 import { TaskModal } from './TaskModal'
 import { TaskCard } from './TaskCard'
 import { LootboxModal } from './LootboxModal'
+import { CalendarView } from './CalendarView'
 
 // Simple helper to play a satisfying sound
 const playSuccessSound = () => {
@@ -88,6 +89,7 @@ export const KanbanBoard = () => {
     const [activeWorkspaceId, setActiveWorkspaceId] = useState(null)
     const [isCreatingWorkspace, setIsCreatingWorkspace] = useState(false)
     const [newWorkspaceName, setNewWorkspaceName] = useState('')
+    const [viewMode, setViewMode] = useState('board') // 'board' | 'calendar'
 
     const { workspaces, createWorkspace, deleteWorkspace } = useWorkspaces()
     const { tasks, loading, addTask, editTask, updateTaskStatus, deleteTask } = useTasks(activeWorkspaceId)
@@ -242,6 +244,35 @@ export const KanbanBoard = () => {
                 )}
             </div>
 
+            {/* VIEW MODE TOGGLE & ADD TASK */}
+            <div className="flex items-center justify-between mb-6">
+                <div className="flex bg-[var(--color-forge-900)] p-1 rounded-xl border border-[var(--color-forge-700)] shadow-inner">
+                    <button
+                        onClick={() => setViewMode('board')}
+                        className={`flex items-center gap-2 px-4 py-1.5 rounded-lg font-bold text-sm transition-all ${viewMode === 'board' ? 'bg-[var(--color-forge-800)] text-white shadow-sm' : 'text-gray-400 hover:text-white'}`}
+                    >
+                        <Layout size={16} /> Board
+                    </button>
+                    <button
+                        onClick={() => setViewMode('calendar')}
+                        className={`flex items-center gap-2 px-4 py-1.5 rounded-lg font-bold text-sm transition-all ${viewMode === 'calendar' ? 'bg-[var(--color-forge-accent)] text-white shadow-[0_0_15px_rgba(255,83,73,0.3)] border border-transparent' : 'text-gray-400 hover:text-white'}`}
+                    >
+                        <CalendarIcon size={16} /> Calendar
+                    </button>
+                </div>
+
+                <button
+                    onClick={() => {
+                        setEditingTask(null)
+                        setIsModalOpen(true)
+                    }}
+                    className="flex items-center gap-2 bg-[var(--color-text-main)] text-[var(--color-forge-900)] px-4 py-2 rounded-full font-bold hover:scale-105 transition-transform shadow-md"
+                >
+                    <Plus size={18} />
+                    <span className="hidden sm:inline-block">{t('createTask')}</span>
+                </button>
+            </div>
+
             {/* 1. Rich Task Creation Modal Launcher */}
             <TaskModal
                 isOpen={isModalOpen}
@@ -249,47 +280,58 @@ export const KanbanBoard = () => {
                     setIsModalOpen(false)
                     setEditingTask(null)
                 }}
-                onOpenNew={() => {
-                    setEditingTask(null)
-                    setIsModalOpen(true)
-                }}
+                /* We remove onOpenNew from here since we lifted the Add Task button out! */
                 initialData={editingTask}
                 onSaveTask={editingTask ? editTask : addTask}
             />
 
-            {/* 2. Drag and Drop Layout */}
+            {/* 2. Main View Area */}
             <div className="flex-grow min-h-0">
-                <DndContext
-                    sensors={sensors}
-                    collisionDetection={closestCorners}
-                    onDragStart={handleDragStart}
-                    onDragEnd={handleDragEnd}
-                >
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 h-full pb-8">
-                        {columns.map(col => (
-                            <Column
-                                key={col.id}
-                                id={col.id}
-                                title={col.title}
-                                tasks={tasksByCol[col.id]}
-                                icon={col.icon}
-                                onDeleteTask={deleteTask}
-                                onEditTask={(task) => {
-                                    setEditingTask(task)
-                                    setIsModalOpen(true)
-                                }}
-                            />
-                        ))}
-                    </div>
+                {viewMode === 'board' ? (
+                    <DndContext
+                        sensors={sensors}
+                        collisionDetection={closestCorners}
+                        onDragStart={handleDragStart}
+                        onDragEnd={handleDragEnd}
+                    >
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 h-full pb-8">
+                            {columns.map(col => (
+                                <Column
+                                    key={col.id}
+                                    id={col.id}
+                                    title={col.title}
+                                    tasks={tasksByCol[col.id]}
+                                    icon={col.icon}
+                                    onDeleteTask={deleteTask}
+                                    onEditTask={(task) => {
+                                        setEditingTask(task)
+                                        setIsModalOpen(true)
+                                    }}
+                                />
+                            ))}
+                        </div>
 
-                    <DragOverlay>
-                        {activeTask ? (
-                            <div className="opacity-95 transform rotate-3 scale-105">
-                                <TaskCard task={activeTask} onDelete={() => { }} onEdit={() => { }} />
-                            </div>
-                        ) : null}
-                    </DragOverlay>
-                </DndContext>
+                        <DragOverlay>
+                            {activeTask ? (
+                                <div className="opacity-95 transform rotate-3 scale-105">
+                                    <TaskCard task={activeTask} onDelete={() => { }} onEdit={() => { }} />
+                                </div>
+                            ) : null}
+                        </DragOverlay>
+                    </DndContext>
+                ) : (
+                    <CalendarView
+                        tasks={localTasks}
+                        onOpenNewTask={(initialData) => {
+                            setEditingTask(initialData)
+                            setIsModalOpen(true)
+                        }}
+                        onEditTask={(task) => {
+                            setEditingTask(task)
+                            setIsModalOpen(true)
+                        }}
+                    />
+                )}
             </div>
 
             <LootboxModal
@@ -301,6 +343,6 @@ export const KanbanBoard = () => {
                     setShowLootbox(false)
                 }}
             />
-        </div>
+        </div >
     )
 }

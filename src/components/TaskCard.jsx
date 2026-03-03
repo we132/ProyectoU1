@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { MoreVertical, Trash2, Edit3, Image as ImageIcon } from 'lucide-react'
+import { MoreVertical, Trash2, Edit3, Image as ImageIcon, Calendar } from 'lucide-react'
 import { useLanguage } from '../context/LanguageContext'
 
 const diffColors = {
@@ -9,10 +9,29 @@ const diffColors = {
     medium: 'text-yellow-400 bg-yellow-400/10 border-yellow-400/20',
     hard: 'text-[var(--color-forge-danger)] bg-[var(--color-forge-danger)]/10 border-red-500/20'
 }
-
 export const TaskCard = ({ task, onDelete, onEdit }) => {
     const { t } = useLanguage()
     const [showMenu, setShowMenu] = useState(false)
+
+    const getDueDateBadge = (dateString) => {
+        if (!dateString) return null
+        const due = new Date(dateString)
+        due.setHours(0, 0, 0, 0)
+        const today = new Date()
+        today.setHours(0, 0, 0, 0)
+
+        const diffTime = due - today
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+
+        // Format to a readable string like "Oct 12"
+        const formattedDate = due.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+
+        if (diffDays < 0) return { text: formattedDate, style: 'text-red-400 bg-red-400/10 border-red-400/20' }
+        if (diffDays === 0) return { text: 'Today', style: 'text-yellow-400 bg-yellow-400/10 border-yellow-400/20' }
+        return { text: formattedDate, style: 'text-blue-400 bg-blue-400/10 border-blue-400/20' }
+    }
+
+    const dueDateBadge = getDueDateBadge(task.due_date)
 
     const {
         attributes,
@@ -37,7 +56,7 @@ export const TaskCard = ({ task, onDelete, onEdit }) => {
             {...attributes}
             {...listeners}
             className={`relative group bg-[var(--color-forge-800)] border rounded-xl mb-4 flex flex-col cursor-grab transition-colors ${isDragging ? 'ring-2 ring-[var(--color-forge-accent)] shadow-2xl scale-105 border-[var(--color-forge-accent)]' :
-                    task.status === 'done' ? 'border-green-500/50 shadow-[0_0_15px_rgba(34,197,94,0.15)] opacity-80' : 'border-[var(--color-forge-700)] hover:border-gray-500 shadow-sm'
+                task.status === 'done' ? 'border-green-500/50 shadow-[0_0_15px_rgba(34,197,94,0.15)] opacity-80' : 'border-[var(--color-forge-700)] hover:border-gray-500 shadow-sm'
                 }`}
         >
             {/* Thumbnail Area */}
@@ -111,9 +130,17 @@ export const TaskCard = ({ task, onDelete, onEdit }) => {
                 )}
 
                 <div className="flex justify-between items-center mt-3 pt-3 border-t border-[var(--color-forge-700)]">
-                    <span className="text-xs font-bold text-[var(--color-forge-xp)]">
-                        +{task.xp_reward} XP
-                    </span>
+                    <div className="flex items-center gap-2">
+                        <span className="text-xs font-bold text-[var(--color-forge-xp)]">
+                            +{task.xp_reward} XP
+                        </span>
+                        {dueDateBadge && task.status !== 'done' && (
+                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded border flex items-center gap-1 ${dueDateBadge.style}`}>
+                                <Calendar size={10} />
+                                {dueDateBadge.text}
+                            </span>
+                        )}
+                    </div>
                     {task.status === 'done' && (
                         <span className="text-[10px] font-bold text-green-400 bg-green-400/10 px-2 py-0.5 rounded flex items-center gap-1">
                             COMPLETED
