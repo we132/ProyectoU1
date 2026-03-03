@@ -15,7 +15,8 @@ export const TaskCard = ({ task, onDelete, onEdit }) => {
 
     const getDueDateBadge = (dateString) => {
         if (!dateString) return null
-        const due = new Date(dateString)
+        const localDateString = dateString.includes('T') ? dateString.split('T')[0] : dateString;
+        const due = new Date(localDateString + 'T00:00:00')
         due.setHours(0, 0, 0, 0)
         const today = new Date()
         today.setHours(0, 0, 0, 0)

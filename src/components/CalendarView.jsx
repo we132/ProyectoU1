@@ -36,7 +36,9 @@ export const CalendarView = ({ tasks, onOpenNewTask, onEditTask, onDeleteTask })
         if (!day) return []
         return tasks.filter(task => {
             if (!task.due_date) return false
-            const dueDate = new Date(task.due_date)
+            const localDateString = task.due_date.includes('T') ? task.due_date.split('T')[0] : task.due_date;
+            const dueDate = new Date(localDateString + 'T00:00:00')
+
             return dueDate.getFullYear() === day.getFullYear() &&
                 dueDate.getMonth() === day.getMonth() &&
                 dueDate.getDate() === day.getDate()
