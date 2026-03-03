@@ -69,16 +69,15 @@ export const AudioProvider = ({ children }) => {
                 return;
             }
 
-            // Always force a load when the URL changes or music is toggled ON to ensure the buffer resets
-            audioRef.current.load();
-
             const playPromise = audioRef.current.play();
             if (playPromise !== undefined) {
                 playPromise.then(() => {
                     setPlayError(false);
                 }).catch(e => {
-                    console.error("Audio Global block:", e);
-                    setPlayError(true);
+                    if (e.name !== 'AbortError') {
+                        console.error("Audio Global block:", e);
+                        setPlayError(true);
+                    }
                 });
             }
         }
@@ -100,16 +99,37 @@ export const AudioProvider = ({ children }) => {
     };
 
     // Navigation Controls
+    const toggleMusic = () => {
+        if (!musicEnabled) {
+            setMusicEnabled(true);
+            if (audioRef.current) {
+                const p = audioRef.current.play();
+                if (p !== undefined) p.catch(e => { if (e.name !== 'AbortError') setPlayError(true); });
+            }
+        } else {
+            setMusicEnabled(false);
+            if (audioRef.current) audioRef.current.pause();
+        }
+    };
+
     const nextTrack = () => {
         if (!activeStation?.streamUrls?.length) return;
         setTrackIndex((prev) => (prev + 1) % activeStation.streamUrls.length);
         if (!musicEnabled) setMusicEnabled(true);
+        if (audioRef.current) {
+            const p = audioRef.current.play();
+            if (p !== undefined) p.catch(() => { });
+        }
     };
 
     const prevTrack = () => {
         if (!activeStation?.streamUrls?.length) return;
         setTrackIndex((prev) => (prev - 1 + activeStation.streamUrls.length) % activeStation.streamUrls.length);
         if (!musicEnabled) setMusicEnabled(true);
+        if (audioRef.current) {
+            const p = audioRef.current.play();
+            if (p !== undefined) p.catch(() => { });
+        }
     };
 
     const seekTo = (amount) => {
@@ -128,6 +148,13 @@ export const AudioProvider = ({ children }) => {
     };
 
     // Event Handlers for Native Audio
+    const handleCanPlay = () => {
+        if (musicEnabled && audioRef.current) {
+            const p = audioRef.current.play();
+            if (p !== undefined) p.catch(() => { });
+        }
+    };
+
     const handleTimeUpdate = () => {
         if (audioRef.current) {
             setCurrentTime(audioRef.current.currentTime);
@@ -172,6 +199,7 @@ export const AudioProvider = ({ children }) => {
                 onEnded={handleTrackEnd}
                 onTimeUpdate={handleTimeUpdate}
                 onLoadedMetadata={handleLoadedMetadata}
+                onCanPlay={handleCanPlay}
                 loop={activeStation?.streamUrls?.length === 1}
             />
             {children}
