@@ -1,8 +1,14 @@
 import { useState, useEffect } from 'react';
 import { X, Play, Pause, RotateCcw, Brain } from 'lucide-react';
+import { useAnalytics } from '../hooks/useAnalytics';
+
 export const FocusMode = ({ isOpen, onClose }) => {
     const [timeLeft, setTimeLeft] = useState(25 * 60);
     const [isActive, setIsActive] = useState(false);
+
+    // Defaulting to 25 minutes. If user changes logic, this handles it dynamically based on initial full time.
+    const FOCUS_MINUTES = 25;
+    const { logSession } = useAnalytics();
 
     useEffect(() => {
         let interval = null;
@@ -10,9 +16,25 @@ export const FocusMode = ({ isOpen, onClose }) => {
             interval = setInterval(() => {
                 setTimeLeft(time => time - 1);
             }, 1000);
-        } else if (timeLeft === 0) {
+        } else if (timeLeft === 0 && isActive) {
             clearInterval(interval);
             setIsActive(false);
+
+            // Log exactly FOCUS_MINUTES (default 25) when timer naturally reaches 0
+            logSession(FOCUS_MINUTES);
+
+            // Play a ding sound for feedback
+            try {
+                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioCtx.createOscillator();
+                oscillator.connect(audioCtx.destination);
+                oscillator.type = 'sine';
+                oscillator.frequency.setValueAtTime(800, audioCtx.currentTime);
+                oscillator.start();
+                oscillator.stop(audioCtx.currentTime + 0.5);
+            } catch (e) {
+                // Ignore audio errors
+            }
         }
         return () => clearInterval(interval);
     }, [isActive, timeLeft]);

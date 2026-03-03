@@ -1,9 +1,10 @@
-import { useState, useRef } from 'react';
-import { Settings, X, LogOut, CheckCircle2, User, Upload, Palette, Loader2, Image as ImageIcon, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { Settings, X, LogOut, CheckCircle2, User, Upload, Palette, Loader2, Image as ImageIcon, ChevronLeft, ChevronRight, Activity } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useTheme } from '../context/ThemeContext';
 import { useProfile } from '../hooks/useProfile';
+import { useAnalytics } from '../hooks/useAnalytics';
 
 export const SettingsModal = ({ isOpen, onClose }) => {
     const { signOut, user } = useAuth();
@@ -16,11 +17,22 @@ export const SettingsModal = ({ isOpen, onClose }) => {
     const AVATARS_PER_PAGE = 12;
     const TOTAL_AVATARS = 24;
 
-    // Procedurally generated default avatars
     const defaultAvatars = Array.from({ length: TOTAL_AVATARS }).map((_, i) => `https://api.dicebear.com/9.x/bottts/svg?seed=ForgeHero${i}&backgroundColor=transparent`);
     const paginatedAvatars = defaultAvatars.slice(avatarPage * AVATARS_PER_PAGE, (avatarPage + 1) * AVATARS_PER_PAGE);
 
     const fileInputRef = useRef(null);
+
+    // Analytics Hook
+    const { stats, loading: statsLoading, fetchWeeklyStats, fetchAllTimeMinutes } = useAnalytics();
+    const [allTimeMins, setAllTimeMins] = useState(0);
+
+    // Fetch analytics data when modal opens
+    useEffect(() => {
+        if (isOpen) {
+            fetchWeeklyStats();
+            fetchAllTimeMinutes().then(setAllTimeMins);
+        }
+    }, [isOpen, fetchWeeklyStats, fetchAllTimeMinutes]);
 
     if (!isOpen) return null;
 
@@ -112,6 +124,59 @@ export const SettingsModal = ({ isOpen, onClose }) => {
 
                 {/* Right Column: Scrollable Settings */}
                 <div className="w-full sm:w-2/3 p-8 overflow-y-auto max-h-[85vh]">
+
+                    {/* Analytics Dashboard */}
+                    <div className="mb-10">
+                        <div className="flex items-center gap-3 mb-6">
+                            <Activity className="text-[var(--color-forge-accent)]" size={24} />
+                            <h2 className="text-2xl font-bold text-[var(--color-text-main)]">Focus Analytics</h2>
+                        </div>
+
+                        <div className="bg-forge-900 border border-forge-700 rounded-2xl p-6 shadow-inner">
+                            <div className="flex justify-between items-center mb-6">
+                                <span className="text-sm font-bold text-gray-400">Past 7 Days</span>
+                                <span className="text-xs font-bold text-forge-accent bg-forge-accent/10 border border-forge-accent/20 px-3 py-1.5 rounded-full shadow-neon">
+                                    {allTimeMins} Mins Total (All Time)
+                                </span>
+                            </div>
+
+                            {statsLoading ? (
+                                <div className="h-40 flex items-center justify-center">
+                                    <Loader2 className="animate-spin text-forge-accent" />
+                                </div>
+                            ) : (
+                                <div className="flex items-end justify-between h-40 gap-2 border-b border-forge-700/50 pb-2">
+                                    {stats.map((stat, i) => {
+                                        // Calculate max dynamically to scale the heights
+                                        const maxMins = Math.max(...stats.map(s => s.minutes), 1);
+                                        const heightPercent = (stat.minutes / maxMins) * 100;
+                                        const isToday = i === 6; // Last item in chronological bucket is today
+
+                                        return (
+                                            <div key={i} className="flex flex-col items-center gap-2 flex-1 group h-full justify-end">
+                                                <div className="w-full relative flex justify-center h-full items-end group">
+                                                    <div
+                                                        className={`w-full max-w-[40px] rounded-t-lg transition-all duration-500 relative ${isToday ? 'bg-[var(--color-forge-accent)] shadow-neon' : 'bg-forge-800 border-x border-t border-forge-700 group-hover:bg-forge-700'}`}
+                                                        style={{ height: `${Math.max(2, heightPercent)}%` }}
+                                                    >
+                                                        {stat.minutes > 0 && (
+                                                            <div className="absolute -top-8 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 bg-black text-white text-[10px] font-bold py-1 px-2 rounded transition-opacity whitespace-nowrap z-10 pointer-events-none">
+                                                                {stat.minutes}m
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                                <span className={`text-[10px] font-bold uppercase ${isToday ? 'text-forge-accent' : 'text-gray-500'}`}>
+                                                    {stat.day}
+                                                </span>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
                     {/* Theme Settings Wrapper */}
                     <div className="mb-10">
                         <div className="flex items-center gap-3 mb-6">
@@ -247,6 +312,6 @@ export const SettingsModal = ({ isOpen, onClose }) => {
                     </div>
                 </div>
             </div>
-        </div>
+        </div >
     );
 };
