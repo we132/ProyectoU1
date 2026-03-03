@@ -225,6 +225,19 @@ export const KanbanBoard = () => {
                         className={`group px-5 py-2 rounded-full font-bold text-sm whitespace-nowrap transition-all flex items-center gap-3 cursor-pointer ${activeWorkspaceId === w.id ? 'bg-[var(--color-forge-accent)] text-white shadow-neon' : 'bg-[var(--color-forge-800)] text-gray-400 hover:text-white border border-[var(--color-forge-700)]'}`}
                     >
                         <span>{w.name}</span>
+                        {w.type === 'group' && w.invite_code && (
+                            <span
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    navigator.clipboard.writeText(w.invite_code);
+                                    alert(`Invide Code Copied: ${w.invite_code}`);
+                                }}
+                                className={`text-[10px] font-mono tracking-widest px-2 py-0.5 rounded-md border transition-colors ${activeWorkspaceId === w.id ? 'bg-white/20 border-white/30 text-white hover:bg-white/30' : 'bg-forge-[950] border-forge-700 text-gray-400 hover:text-white hover:border-forge-600'}`}
+                                title="Click to copy invite code"
+                            >
+                                {w.invite_code}
+                            </span>
+                        )}
                         <button
                             className={`opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded-full ${activeWorkspaceId === w.id ? 'hover:bg-white/20' : 'hover:bg-red-400/20 hover:text-red-400'}`}
                             onClick={(e) => {
