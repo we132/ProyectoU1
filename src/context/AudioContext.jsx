@@ -53,11 +53,23 @@ export const AudioProvider = ({ children }) => {
         }
     }, [tracks]);
 
-    // Handle Playback Logic
+    // Safety fallback: if streamUrls is empty or invalid, fallback to empty string
+    const currentStreamUrl = activeStation?.streamUrls?.[trackIndex] || '';
+
+    // Handle Playback Logic & URL Changes
     useEffect(() => {
-        if (musicEnabled && audioRef.current) {
+        if (audioRef.current) {
             audioRef.current.volume = 0.3;
-            // The user action that toggled musicEnabled will usually bubble up and allow this to play.
+
+            // If music is NOT enabled, simply pause
+            if (!musicEnabled) {
+                audioRef.current.pause();
+                return;
+            }
+
+            // Always force a load when the URL changes or music is toggled ON to ensure the buffer resets
+            audioRef.current.load();
+
             const playPromise = audioRef.current.play();
             if (playPromise !== undefined) {
                 playPromise.then(() => {
@@ -67,10 +79,8 @@ export const AudioProvider = ({ children }) => {
                     setPlayError(true);
                 });
             }
-        } else if (!musicEnabled && audioRef.current) {
-            audioRef.current.pause();
         }
-    }, [musicEnabled, activeStation, trackIndex]);
+    }, [musicEnabled, currentStreamUrl]);
 
     const handleTrackEnd = () => {
         if (activeStation.streamUrls.length > 1) {
@@ -94,24 +104,10 @@ export const AudioProvider = ({ children }) => {
     const changeStation = (station) => {
         setActiveStation(station);
         setTrackIndex(0);
-        // Automatically ensure play state is true when switching
         if (!musicEnabled) {
             setMusicEnabled(true);
-        } else {
-            // Restart playback on new stream
-            if (audioRef.current) {
-                audioRef.current.pause();
-                // Allow React to re-render the src prop via state change, then play
-                setTimeout(() => {
-                    const p = audioRef.current?.play();
-                    if (p) p.catch(e => setPlayError(true));
-                }, 50);
-            }
         }
     };
-
-    // Safety fallback: if streamUrls is empty or invalid, fallback to empty string
-    const currentStreamUrl = activeStation?.streamUrls?.[trackIndex] || '';
 
     // If user logs out, stop music
     useEffect(() => {
@@ -136,8 +132,7 @@ export const AudioProvider = ({ children }) => {
             <audio
                 ref={audioRef}
                 src={currentStreamUrl}
-                preload="none"
-                crossOrigin="anonymous"
+                preload="auto"
                 onEnded={handleTrackEnd}
                 loop={activeStation?.streamUrls?.length === 1}
             />
