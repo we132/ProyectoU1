@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { PlusCircle, Trash2, Folder, FolderPlus, FileText, Image as ImageIcon, Loader2, ArrowRight, Edit2, Check, X } from 'lucide-react'
+import { PlusCircle, Trash2, Folder, FolderPlus, FileText, Image as ImageIcon, Loader2, ArrowRight, Edit2, Check, X, ChevronLeft } from 'lucide-react'
 import { useNotes } from '../hooks/useNotes'
 import { NoteEditor } from './NoteEditor'
 import { useLanguage } from '../context/LanguageContext'
@@ -63,7 +63,7 @@ export const NotesView = () => {
         <div className="w-full h-full flex flex-col md:flex-row gap-6 animate-in fade-in duration-500 overflow-hidden text-[var(--color-text-main)]">
 
             {/* LEFT PANE: FOLDERS SIDEBAR */}
-            <div className="w-full md:w-64 flex-shrink-0 flex flex-col bg-[var(--color-forge-900)] border border-[var(--color-forge-700)] rounded-2xl p-4 overflow-hidden h-[300px] md:h-full">
+            <div className={`w-full md:w-64 flex-shrink-0 flex-col bg-[var(--color-forge-900)] border border-[var(--color-forge-700)] rounded-2xl p-4 overflow-hidden h-full relative ${activeFolderId ? 'hidden md:flex' : 'flex'}`}>
                 <div className="flex items-center justify-between mb-6">
                     <h2 className="text-xl font-bold flex items-center gap-2">
                         <Folder className="text-[var(--color-forge-accent)]" />
@@ -71,7 +71,7 @@ export const NotesView = () => {
                     </h2>
                     <button
                         onClick={() => setIsCreatingFolder(!isCreatingFolder)}
-                        className="p-1.5 text-gray-400 hover:text-white transition-colors bg-[var(--color-forge-800)] rounded-lg border border-[var(--color-forge-700)]"
+                        className="hidden md:flex p-1.5 text-gray-400 hover:text-white transition-colors bg-[var(--color-forge-800)] rounded-lg border border-[var(--color-forge-700)]"
                     >
                         <FolderPlus size={18} />
                     </button>
@@ -161,10 +161,18 @@ export const NotesView = () => {
                         ))
                     )}
                 </div>
+
+                {/* Mobile FAB for Creating Folders */}
+                <button
+                    onClick={() => setIsCreatingFolder(!isCreatingFolder)}
+                    className="md:hidden absolute bottom-4 right-4 bg-[var(--color-forge-accent)] text-white p-4 rounded-full shadow-neon flex items-center justify-center hover:scale-105 transition-transform z-10"
+                >
+                    <FolderPlus size={24} />
+                </button>
             </div>
 
             {/* RIGHT PANE: NOTES GRID */}
-            <div className="flex-grow flex flex-col min-w-0 bg-[var(--color-forge-800)]/30 border border-[var(--color-forge-700)] rounded-2xl p-6 h-full overflow-y-auto">
+            <div className={`flex-grow flex-col min-w-0 bg-[var(--color-forge-800)]/30 border border-[var(--color-forge-700)] rounded-2xl p-4 sm:p-6 h-full overflow-y-auto relative ${!activeFolderId ? 'hidden md:flex' : 'flex'}`}>
                 {!activeFolderId ? (
                     <div className="flex-grow flex flex-col items-center justify-center text-gray-500 gap-4 opacity-50">
                         <Folder size={64} className="text-gray-600" />
@@ -173,14 +181,22 @@ export const NotesView = () => {
                     </div>
                 ) : (
                     <>
-                        <div className="flex justify-between items-center mb-8 pb-4 border-b border-[var(--color-forge-700)]">
-                            <h1 className="text-2xl font-bold tracking-tight text-[var(--color-text-main)] truncate pr-4">
-                                {folders.find(f => f.id === activeFolderId)?.name || 'Folder'}
-                            </h1>
+                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 pb-4 border-b border-[var(--color-forge-700)] gap-4">
+                            <div className="flex items-center gap-2 w-full sm:w-auto">
+                                <button
+                                    onClick={() => setActiveFolderId(null)}
+                                    className="md:hidden p-2 -ml-2 text-gray-400 hover:text-white hover:bg-[var(--color-forge-800)] rounded-xl transition-colors"
+                                >
+                                    <ChevronLeft size={24} />
+                                </button>
+                                <h1 className="text-2xl font-bold tracking-tight text-[var(--color-text-main)] truncate pr-4">
+                                    {folders.find(f => f.id === activeFolderId)?.name || 'Folder'}
+                                </h1>
+                            </div>
 
                             <button
                                 onClick={handleCreateNote}
-                                className="flex-shrink-0 flex items-center gap-2 bg-[var(--color-text-main)] text-[var(--color-forge-900)] px-5 py-2.5 rounded-full font-bold hover:scale-105 transition-transform"
+                                className="hidden sm:flex flex-shrink-0 items-center gap-2 bg-[var(--color-text-main)] text-[var(--color-forge-900)] px-5 py-2.5 rounded-full font-bold hover:scale-105 transition-transform"
                             >
                                 <PlusCircle size={20} />
                                 <span className="hidden sm:inline-block">New Page</span>
@@ -236,6 +252,16 @@ export const NotesView = () => {
                             </div>
                         )}
                     </>
+                )}
+
+                {/* Mobile FAB for Creating Notes (Only visible when activeFolderId is valid and on mobile) */}
+                {activeFolderId && (
+                    <button
+                        onClick={handleCreateNote}
+                        className="md:hidden absolute bottom-4 right-4 bg-[var(--color-text-main)] text-[var(--color-forge-900)] p-4 rounded-full shadow-lg flex items-center justify-center hover:scale-105 transition-transform z-10"
+                    >
+                        <PlusCircle size={24} />
+                    </button>
                 )}
             </div>
 

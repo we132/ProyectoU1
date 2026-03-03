@@ -245,10 +245,8 @@ export const SettingsModal = ({ isOpen, onClose }) => {
                             ))}
                         </div>
                     </div>
-
                 </div>
-
             </div>
         </div>
     );
-}
+};
